@@ -4,9 +4,9 @@
 #include "llvm/Support/raw_ostream.h"
 #include <iostream>
 #include "AST.h"
-#include "CodeGen.h"
+//#include "CodeGen.h"
 #include "Parser.h"
-#include "Sema.h"
+//#include "Sema.h"
 
 // Define a command-line option for specifying the input expression.
 static llvm::cl::opt<std::string>
@@ -39,6 +39,7 @@ int main(int argc, const char **argv)
         return 1;
     }
 
+/*
     // Perform semantic analysis on the AST.
     Sema Semantic;
     if (Semantic.semantic(Tree))
@@ -50,7 +51,7 @@ int main(int argc, const char **argv)
     // Generate code for the AST using a code generator.
     CodeGen CodeGenerator;
     CodeGenerator.compile(Tree);
-
+*/
     // The program executed successfully.
     return 0;
 }

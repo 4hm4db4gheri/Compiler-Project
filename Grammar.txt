@@ -1,0 +1,85 @@
+letter : a | . . . | z | A | . . . | Z
+
+digit : 0 | . . . | 9
+
+
+number : digit digit*
+floatNumber: digit+ . digit* | . digit digit*
+varType: number | floatNumber | boolType
+boolType: true | false
+
+assignBoolOp : =
+
+assignIntOp : -= | += | *= | /= | = | %=
+
+relOp : <= | < | > | >= | == | !=
+
+Ident : letter(digit | letter | underscore)*
+
+//initial
+program: (defineDecl)* S
+
+//start
+S : (intDecl | boolDecl | floatDecl | varDecl | constDecl | intAssignStmt | boolAssignStmt| floatAssignmentStmt | varAssignmentStmt | ternaryAssignmentStmt | unaryExpr | ifStmt | whileStmt | dowhileStmt | forStmt | switchStmt | printStmt | minStmt | maxStmt | meanStmt | sqrtNStmt)*                                       
+
+defineDecl: #define Ident (number | floatNumber | boolType)
+
+constDecl: const (intDecl | boolDecl | floatDecl | varDecl)
+intDecl : int Ident (,Ident)*; | int (Ident,)* intDecAss;
+intDecAss : ident, intDecAss ,mathExpr | ident = mathExpr
+
+intDecl : int Ident (,Ident)+ = number+; | int Ident;
+ 
+boolDecl : bool Ident (,Ident)+ = boolType+; | bool Ident; 
+
+floatDecl : float Ident (,Ident)+ = floatNumber+; | float Ident; 
+
+varDecl : var Ident (,Ident)+ = (number | floatNumber | boolType)+ | var Ident;
+
+unaryExpr : Ident--; | Ident++;
+
+//the body block inside control instructions
+assignList : (intAssignStmt | boolAssignStmt| floatAssignmentStmt | varAssignmentStmt | ternaryAssignmentStmt | unaryExpr | ifStmt | whileStmt | dowhileStmt | forStmt | switchStmt | printStmt | minStmt | maxStmt | meanStmt | sqrtNStmt | continueStmt | breakStmt)*
+
+
+intAssignStmt, floatAssignmentStmt : intAndFloat
+intAndFloat : Ident assignIntOp mathExpr;
+boolAssignStmt : Ident assignBoolOp logicalExpr;
+varAssignmentStmt:  intAndFloat | boolAssignStmt
+
+ternaryAssignmentStmt: Ident = logicalExpr ? logicalExpr : logicalExpr;
+
+//logical
+logicalExpr : comparison ((and | or | xor) comparison)* | newForm
+newForm : Ident in [ Ident (,Ident)* ] | Ident not in [ Ident (,Ident)* ]
+comparison : mathExpr relOp mathExpr | ( logicalExpr ) | true | false | Ident
+
+
+//mathamatical
+mathExpr : term ((+| - ) term)*
+term : factor ((* | / | %) factor)*
+factor : final (^ final)*
+final : ( mathExpr ) | -( mathExpr ) | Ident | number | -number | +number | Ident++ |Ident-- | floatNumber | -floatNumber | +floatNumber | int(mathExpr) | float(mathExpr) | bool(mathExpr)
+
+
+//control instructions
+ifStmt : if ( logicalExpr ) {assignList} elseIfStmt | if ( logicalExpr ) {assignList} elseIfStmt else {assignList}
+elseIfStmt : (else if ( logicalExpr ) {assignList})*
+whileStmt: while ( logicalExpr ) {assignList}
+thirdPartFor : Ident (+= | -= | *= | /= | %=) mathExpr | Ident-- | Ident++
+forStmt : for ( intAssignStmt ; logicalExpr ; thirdPartFor ) {assignList}
+
+switchStmt: switch (number){ (case number: assignList breakStmt)* default: assignList breakStmt}
+dowhileStmt: do {assignList} while(logicalExpr)
+
+//functions
+printStmt : print((Ident | mathExpr | logicalExpr));
+minStmt: min(number,number);
+maxStmt: max(number,number);
+meanStmt: mean(Ident,Ident);
+sqrtNStmt: sqrtN(number,number);
+
+//continue and break
+continueStmt: continue;
+breakStmt: break;
+

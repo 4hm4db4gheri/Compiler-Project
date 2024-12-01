@@ -30,8 +30,8 @@ public:
         lte,            // <=
         plus_plus,      // ++
         minus_minus,    // --
-        start_comment,  // /*
-        end_comment,    // */
+        //start_comment,  // /*
+        //end_comment,    // */
         comma,          // ,
         semicolon,      // ;
         plus,           // +

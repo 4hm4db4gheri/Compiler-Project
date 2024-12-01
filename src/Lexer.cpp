@@ -141,6 +141,7 @@ void Lexer::next(Token &token) {
         else
             kind = Token::ident;
         // generate the token
+        llvm::errs() << "formed: $" << Name <<"$" << "\n";
         formToken(token, end, kind);
         return;
     } else if (charinfo::isDigit(*BufferPtr) || (*BufferPtr == '.' && charinfo::isDigit(*(BufferPtr + 1)))) {   //new: identify both int and float
@@ -148,7 +149,7 @@ void Lexer::next(Token &token) {
         const char *end = BufferPtr;
 
         bool isFloat = false;
-
+        
         // If the number starts with digits
         if (charinfo::isDigit(*end)) {
             // Consume leading digits
@@ -173,16 +174,25 @@ void Lexer::next(Token &token) {
                     ++end;
             } else {
                 // '.' not followed by digits, invalid number
+                llvm::errs() << "formed: unknown"<< "\n";
                 formToken(token, end, Token::unknown);
                 return;
             }
         }
 
         // Decide token kind based on whether it's a float
-        if (isFloat)
+        if (isFloat){
+            llvm::StringRef Name(start, end - start);
+            llvm::errs() << "formed: $" << Name <<"$" << "\n";
             formToken(token, end, Token::floatNumber);
-        else
+        }
+            
+        else{
+            llvm::StringRef Name(start, end - start);
+            llvm::errs() << "formed: $" << Name <<"$" << "\n";
             formToken(token, end, Token::number);
+        }
+            
         return;
     } else if (charinfo::isSpecialCharacter(*BufferPtr)) {
         const char *endWithOneLetter = BufferPtr + 1;
@@ -319,8 +329,14 @@ void Lexer::next(Token &token) {
         }
         
         // generate the token
-        if (isFound) formToken(token, end, kind);
-        else formToken(token, BufferPtr + 1, Token::unknown);
+        if (isFound) {
+            llvm::errs() << "formed: $" << NameWithOneLetter <<"$" << " or "<< "formed: $" << NameWithTwoLetter <<"$" << "\n";
+            formToken(token, end, kind);
+        }
+        else{ 
+            llvm::errs() << "formed: unknown"<< "\n";
+            formToken(token, BufferPtr + 1, Token::unknown);
+            }
         return;
     } else if (charinfo::isSharp(*BufferPtr)){  //new: check for #define
         const char *end = BufferPtr + 1;
@@ -330,13 +346,16 @@ void Lexer::next(Token &token) {
         Token::TokenKind kind;
         if(Name == "#define"){
             kind = Token::KW_define;
+            llvm::errs() << "formed: $" << Name <<"$" << "\n";
             formToken(token,end,kind);
             return;
         } else{
+            llvm::errs() << "formed: unknown"<< "\n";
             formToken(token, BufferPtr + 1, Token::unknown);
             return;
         }
     } else {
+        llvm::errs() << "formed: unknown"<< "\n";
         formToken(token, BufferPtr + 1, Token::unknown); 
         return;         
     }

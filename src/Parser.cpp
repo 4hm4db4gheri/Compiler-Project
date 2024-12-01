@@ -131,12 +131,7 @@ Program *Parser::parseProgram()
             }
             break;
         }
-        case Token::start_comment: {
-            parseComment();
-            if (!Tok.is(Token::end_comment))
-                goto _error;
-            break;
-        }
+       
         default: {
             error();
 
@@ -1037,20 +1032,7 @@ _error:
 
 }
 
-void Parser::parseComment()
-{
-    if (expect(Token::start_comment)) {
-        goto _error;
-    }
-    advance();
 
-    while (!Tok.isOneOf(Token::end_comment, Token::eoi)) advance();
-
-    return;
-_error: 
-    while (Tok.getKind() != Token::eoi)
-        advance();
-}
 
 llvm::SmallVector<AST *> Parser::getBody()
 {
@@ -1159,12 +1141,7 @@ llvm::SmallVector<AST *> Parser::getBody()
             }
             break;
         }
-        case Token::start_comment: {
-            parseComment();
-            if (!Tok.is(Token::end_comment))
-                goto _error;
-            break;
-        }
+       
         default:{
             error();
 
