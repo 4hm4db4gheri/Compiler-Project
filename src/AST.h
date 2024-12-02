@@ -3,6 +3,8 @@
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
+#include "TypeKind.h"
+
 
 // Forward declarations of classes used in the AST
 class AST;
@@ -24,6 +26,20 @@ class WhileStmt;
 class elifStmt;
 class ForStmt;
 class PrintStmt;
+
+class CastExpr;
+class DeclarationFloat;
+class DeclarationVar;
+class DeclareDefine;
+class TernaryAssignment;
+class DoWhileStmt;
+class SwitchStmt;
+class CaseStmt;
+class DefaultStmt;
+class MinStmt;
+class MaxStmt;
+class MeanStmt;
+class SqrtNStmt;
 
 // ASTVisitor class defines a visitor pattern to traverse the AST
 class ASTVisitor
@@ -49,6 +65,20 @@ public:
   virtual void visit(elifStmt &) = 0;        // Visit the elifStmt node
   virtual void visit(ForStmt &) = 0;
   virtual void visit(PrintStmt &) = 0;
+  virtual void visit(CastExpr &) = 0;
+
+    virtual void visit(DeclarationFloat &) = 0;
+    virtual void visit(DeclarationVar &) = 0;
+    virtual void visit(DeclareDefine &) = 0;
+    virtual void visit(TernaryAssignment &) = 0;
+    virtual void visit(DoWhileStmt &) = 0;
+    virtual void visit(SwitchStmt &) = 0;
+    virtual void visit(CaseStmt &) = 0;
+    virtual void visit(DefaultStmt &) = 0;
+    virtual void visit(MinStmt &) = 0;
+    virtual void visit(MaxStmt &) = 0;
+    virtual void visit(MeanStmt &) = 0;
+    virtual void visit(SqrtNStmt &) = 0;
 };
 
 // AST class serves as the base class for all AST nodes
@@ -148,33 +178,129 @@ public:
   }
 };
 
+//new:
+// DeclarationFloat class represents a float variable declaration in the AST
+class DeclarationFloat : public Program
+{
+    using VarVector = llvm::SmallVector<llvm::StringRef>;
+    using ValueVector = llvm::SmallVector<Expr *>;
+    VarVector Vars;                           // Stores the list of variables
+    ValueVector Values;                       // Stores the list of initializers
 
-// Final class represents a Final in the AST (either an identifier or a number or true or false)
+public:
+    DeclarationFloat(VarVector Vars, ValueVector Values) : Vars(Vars), Values(Values) {}
+
+    VarVector::const_iterator varBegin() { return Vars.begin(); }
+    VarVector::const_iterator varEnd() { return Vars.end(); }
+    ValueVector::const_iterator valBegin() { return Values.begin(); }
+    ValueVector::const_iterator valEnd() { return Values.end(); }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
+//new:
+class DeclarationVar : public Program
+{
+    using VarVector = llvm::SmallVector<llvm::StringRef>;
+    using ValueVector = llvm::SmallVector<AST *>;
+    using TypeVector = llvm::SmallVector<TypeKind>;
+    VarVector Vars;
+    ValueVector Values;
+    TypeVector Types;
+
+public:
+    DeclarationVar(VarVector Vars, ValueVector Values, TypeVector Types)
+        : Vars(Vars), Values(Values), Types(Types) {}
+
+    VarVector::const_iterator varBegin() const { return Vars.begin(); }
+    VarVector::const_iterator varEnd() const { return Vars.end(); }
+    ValueVector::const_iterator valBegin() const { return Values.begin(); }
+    ValueVector::const_iterator valEnd() const { return Values.end(); }
+    TypeVector::const_iterator typeBegin() const { return Types.begin(); }
+    TypeVector::const_iterator typeEnd() const { return Types.end(); }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
+//new:
+// DeclareDefine class represents a #define directive in the AST
+class DeclareDefine : public Program
+{
+private:
+    llvm::StringRef Name;   // Name of the constant
+    Expr *Value;            // Value of the constant
+
+public:
+    DeclareDefine(llvm::StringRef Name, Expr *Value) : Name(Name), Value(Value) {}
+
+    llvm::StringRef getName() { return Name; }
+    Expr *getValue() { return Value; }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
+//new:
+// TernaryAssignment class represents a ternary assignment in the AST
+class TernaryAssignment : public Program
+{
+private:
+    Final *Variable;        // Variable being assigned
+    Logic *Condition;       // Condition expression
+    Expr *TrueExpr;         // Expression if condition is true
+    Expr *FalseExpr;        // Expression if condition is false
+
+public:
+    TernaryAssignment(Final *Variable, Logic *Condition, Expr *TrueExpr, Expr *FalseExpr)
+        : Variable(Variable), Condition(Condition), TrueExpr(TrueExpr), FalseExpr(FalseExpr) {}
+
+    Final *getVariable() { return Variable; }
+    Logic *getCondition() { return Condition; }
+    Expr *getTrueExpr() { return TrueExpr; }
+    Expr *getFalseExpr() { return FalseExpr; }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
+
 class Final : public Expr
 {
 public:
-  enum ValueKind
-  {
-    Ident,
-    Number
-  };
+    enum ValueKind
+    {
+        Ident,
+        Number,
+        FloatNumber  // Represents float literals
+    };
 
 private:
-  ValueKind Kind;                            // Stores the kind of Final (identifier or number or true or false)
-  llvm::StringRef Val;                       // Stores the value of the Final
+    ValueKind Kind;
+    llvm::StringRef Val;
 
 public:
-  Final(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
+    Final(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
 
-  ValueKind getKind() { return Kind; }
+    ValueKind getKind() const { return Kind; }
+    llvm::StringRef getVal() const { return Val; }
 
-  llvm::StringRef getVal() { return Val; }
-
-  virtual void accept(ASTVisitor &V) override
-  {
-    V.visit(*this);
-  }
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
 };
+
+
 
 // BinaryOp class represents a binary operation in the AST (plus, minus, multiplication, division)
 class BinaryOp : public Expr
@@ -280,40 +406,37 @@ public:
   }
 };
 
-// Assignment class represents an assignment expression in the AST
-class Assignment : public Program
-{
-  public:
-  enum AssignKind
-  {
-    Assign,         // =
-    Minus_assign,   // -=
-    Plus_assign,    // +=
-    Star_assign,    // *=
-    Slash_assign,   // /=
-};
+// AST.h
+
+class Assignment : public Program {
+public:
+    enum AssignKind {
+        Assign,
+        Plus_assign,
+        Minus_assign,
+        Star_assign,
+        Slash_assign,
+        Mod_assign
+    };
+
 private:
-  Final *Left;                             // Left-hand side Final (identifier)
-  Expr *RightExpr;                         // Right-hand side expression
-  Logic *RightLogicExpr;                   // Right-hand side logical expression
-  AssignKind AK;                           // Kind of assignment
+    Final *Variable;   // The variable being assigned to
+    AST *Value;        // The value being assigned (Expr* or Logic*)
+    AssignKind OpKind; // The kind of assignment operator
 
 public:
-  Assignment(Final *L, Expr *RE, AssignKind AK, Logic *RL) : Left(L), RightExpr(RE), AK(AK), RightLogicExpr(RL) {}
+    Assignment(Final *Variable, AST *Value, AssignKind OpKind)
+        : Variable(Variable), Value(Value), OpKind(OpKind) {}
 
-  Final *getLeft() { return Left; }
+    Final *getVariable() { return Variable; }
+    AST *getValue() { return Value; }
+    AssignKind getAssignKind() { return OpKind; }
 
-  Expr *getRightExpr() { return RightExpr; }
-
-  Logic *getRightLogic() { return RightLogicExpr; }
-
-  AssignKind getAssignKind() { return AK; }
-
-  virtual void accept(ASTVisitor &V) override
-  {
-    V.visit(*this);
-  }
+    virtual void accept(ASTVisitor &V) override {
+        V.visit(*this);
+    }
 };
+
 
 // Comparison class represents a comparison expression in the AST
 class Comparison : public Logic
@@ -360,6 +483,7 @@ class LogicalExpr : public Logic
   {
     And,          // &&
     Or,           // ||
+    Xor           
   };
 
 private:
@@ -463,6 +587,28 @@ public:
   }
 };
 
+//new:
+// DoWhileStmt class represents a do-while loop in the AST
+class DoWhileStmt : public Program
+{
+    using BodyVector = llvm::SmallVector<AST *>;
+    BodyVector Body;
+    Logic *Cond;
+
+public:
+    DoWhileStmt(Logic *Cond, BodyVector Body) : Cond(Cond), Body(Body) {}
+
+    Logic *getCond() { return Cond; }
+    BodyVector::const_iterator begin() { return Body.begin(); }
+    BodyVector::const_iterator end() { return Body.end(); }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
+
 
 class ForStmt : public Program
 {
@@ -512,5 +658,163 @@ public:
     V.visit(*this);
   }
 };
+
+class CastExpr : public Expr
+{
+public:
+    enum CastType
+    {
+        IntCast,
+        BoolCast,
+        FloatCast
+    };
+
+private:
+    CastType Type;
+    AST *Inner;
+
+public:
+    CastExpr(CastType Type, AST *Inner) : Type(Type), Inner(Inner) {}
+
+    CastType getCastType() { return Type; }
+    AST *getInner() { return Inner; }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
+//new:
+// SwitchStmt class represents a switch statement in the AST
+class SwitchStmt : public Program
+{
+    Expr *SwitchExpr;                           // Expression being switched on
+    llvm::SmallVector<CaseStmt *> Cases;        // List of case statements
+    DefaultStmt *DefaultCase;                   // Default case (optional)
+
+public:
+    SwitchStmt(Expr *SwitchExpr, llvm::SmallVector<CaseStmt *> Cases, DefaultStmt *DefaultCase)
+        : SwitchExpr(SwitchExpr), Cases(Cases), DefaultCase(DefaultCase) {}
+
+    Expr *getSwitchExpr() { return SwitchExpr; }
+    llvm::SmallVector<CaseStmt *>::const_iterator caseBegin() { return Cases.begin(); }
+    llvm::SmallVector<CaseStmt *>::const_iterator caseEnd() { return Cases.end(); }
+    DefaultStmt *getDefaultCase() { return DefaultCase; }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
+// CaseStmt class represents a case within a switch statement in the AST
+class CaseStmt : public Program
+{
+    Expr *CaseExpr;                          // Expression for the case
+    llvm::SmallVector<AST *> Body;           // Statements within the case
+
+public:
+    CaseStmt(Expr *CaseExpr, llvm::SmallVector<AST *> Body)
+        : CaseExpr(CaseExpr), Body(Body) {}
+
+    Expr *getCaseExpr() { return CaseExpr; }
+    llvm::SmallVector<AST *>::const_iterator begin() { return Body.begin(); }
+    llvm::SmallVector<AST *>::const_iterator end() { return Body.end(); }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
+// DefaultStmt class represents the default case within a switch statement in the AST
+class DefaultStmt : public Program
+{
+    llvm::SmallVector<AST *> Body;           // Statements within the default case
+
+public:
+    DefaultStmt(llvm::SmallVector<AST *> Body) : Body(Body) {}
+
+    llvm::SmallVector<AST *>::const_iterator begin() { return Body.begin(); }
+    llvm::SmallVector<AST *>::const_iterator end() { return Body.end(); }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
+// MinStmt class represents a call to the min function in the AST
+class MinStmt : public Expr
+{
+    Expr *Left;       // First argument
+    Expr *Right;      // Second argument
+
+public:
+    MinStmt(Expr *Left, Expr *Right) : Left(Left), Right(Right) {}
+
+    Expr *getLeft() { return Left; }
+    Expr *getRight() { return Right; }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
+// MaxStmt class represents a call to the max function in the AST
+class MaxStmt : public Expr
+{
+    Expr *Left;       // First argument
+    Expr *Right;      // Second argument
+
+public:
+    MaxStmt(Expr *Left, Expr *Right) : Left(Left), Right(Right) {}
+
+    Expr *getLeft() { return Left; }
+    Expr *getRight() { return Right; }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
+// MeanStmt class represents a call to the mean function in the AST
+class MeanStmt : public Expr
+{
+    llvm::SmallVector<Expr *> Values;  // Arguments to the mean function
+
+public:
+    MeanStmt(llvm::SmallVector<Expr *> Values) : Values(Values) {}
+
+    llvm::SmallVector<Expr *>::const_iterator begin() { return Values.begin(); }
+    llvm::SmallVector<Expr *>::const_iterator end() { return Values.end(); }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
+// SqrtNStmt class represents a call to the sqrtN function in the AST
+class SqrtNStmt : public Expr
+{
+    Expr *Base;       // Base value
+    Expr *NthRoot;    // Nth root
+
+public:
+    SqrtNStmt(Expr *Base, Expr *NthRoot) : Base(Base), NthRoot(NthRoot) {}
+
+    Expr *getBase() { return Base; }
+    Expr *getNthRoot() { return NthRoot; }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
 
 #endif

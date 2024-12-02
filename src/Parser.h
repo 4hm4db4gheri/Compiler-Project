@@ -5,6 +5,7 @@
 #include "Lexer.h"
 #include "llvm/Support/raw_ostream.h"
 
+
 class Parser
 {
     Lexer &Lex;    // retrieve the next token from the input
@@ -13,7 +14,7 @@ class Parser
 
     void error()
     {
-        llvm::errs() << "Unexpected: " << Tok.getText() << Tok.getKind() << "\n";
+        llvm::errs() << "Unexpected Token: $" << Tok.getText()<< "$" << "\n";
         HasError = true;
     }
 
@@ -25,9 +26,10 @@ class Parser
     {
         if (Tok.getKind() != Kind)
         {
-            //error();
+            llvm::errs() << "was not Expecting Token: $" << Tok.getText()<< "$" << "\n";
             return true;
         }
+        llvm::errs() << "was Expecting Token: $" << Tok.getText()<< "$" << "\n";  
         return false;
     }
 
@@ -36,6 +38,7 @@ class Parser
     {
         if (expect(Kind))
             return true;
+        llvm::errs() << "consumed" << "\n";
         advance();
         return false;
     }
@@ -56,8 +59,23 @@ class Parser
     WhileStmt *parseWhile();
     ForStmt *parseFor();
     PrintStmt *parsePrint();
-    void parseComment();
     llvm::SmallVector<AST *> getBody();
+
+    DeclarationFloat *parseFloatDec();
+    DeclarationVar *parseVarDec();
+    DeclareDefine *parseDefineDec();
+    Assignment *parseFloatAssign();
+    Assignment *parseVarAssign();
+    TernaryAssignment *parseTernaryAssign();
+    DoWhileStmt *parseDoWhile();
+    SwitchStmt *parseSwitch();
+    MinStmt *parseMin();
+    MaxStmt *parseMax();
+    MeanStmt *parseMean();
+    SqrtNStmt *parseSqrtN();
+    AST *parseValue();
+
+
 
 public:
     // initializes all members and retrieves the first token
@@ -70,6 +88,8 @@ public:
     bool hasError() { return HasError; }
 
     Program *parse();
+    
+    TypeKind inferType(AST *Value);
 };
 
 #endif
