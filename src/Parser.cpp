@@ -8,11 +8,13 @@ Program *Parser::parse()
     return Res;
 }
 
+
+
 Program *Parser::parseProgram()
 {
     llvm::SmallVector<AST *> data;
 
-     // First parse all #define declarations
+    // First parse all #define declarations
     while (Tok.is(Token::KW_define))
     {
         DeclareDefine *defineDecl = parseDefineDec();
@@ -25,20 +27,22 @@ Program *Parser::parseProgram()
 
     while (!Tok.is(Token::eoi))
     {
-        
+
         switch (Tok.getKind())
         {
-        case Token::KW_int: {
+        case Token::KW_int:
+        {
             DeclarationInt *d;
             d = parseIntDec();
             if (d)
                 data.push_back(d);
             else
                 goto _error;
-                
+
             break;
         }
-        case Token::KW_bool: {
+        case Token::KW_bool:
+        {
             DeclarationBool *dbool;
             dbool = parseBoolDec();
             if (dbool)
@@ -48,191 +52,226 @@ Program *Parser::parseProgram()
 
             break;
         }
-        case Token::KW_float: {
-        DeclarationFloat *dfloat;
-        dfloat = parseFloatDec();
-        if (dfloat)
-            data.push_back(dfloat);
-        else
-            goto _error;
-        break;
-    }
-        case Token::KW_var: {
-        DeclarationVar *dvar;
-        dvar = parseVarDec();
-        if (dvar)
-            data.push_back(dvar);
-        else
-            goto _error;
-        break;
-    }
-        case Token::ident: {
-    Token prev_token = Tok;
-    const char* prev_buffer = Lex.getBuffer();
+        case Token::KW_float:
+        {
+            DeclarationFloat *dfloat;
+            dfloat = parseFloatDec();
+            if (dfloat)
+                data.push_back(dfloat);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_var:
+        {
+            DeclarationVar *dvar;
+            dvar = parseVarDec();
+            if (dvar)
+                data.push_back(dvar);
+            else
+                goto _error;
+            break;
+        }
+        case Token::ident:
+        {
+            Token prev_token = Tok;
+            const char *prev_buffer = Lex.getBuffer();
 
-    // 1. Attempt to parse a unary operation
-    UnaryOp *u = parseUnary();
-    if (u && Tok.is(Token::semicolon)) {
-        data.push_back(u);
-        break;
-    } else {
-        // If parsing failed or no semicolon, reset lexer state
-        Tok = prev_token;
-        Lex.setBufferPtr(prev_buffer);
-    }
+            // 1. Attempt to parse a unary operation
+            UnaryOp *u = parseUnary();
+            if (u && Tok.is(Token::semicolon))
+            {
+                data.push_back(u);
+                break;
+            }
+            else
+            {
+                // If parsing failed or no semicolon, reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
 
-    // 2. Attempt to parse a ternary assignment
-    TernaryAssignment *t_assign = parseTernaryAssign();
-    if (t_assign && Tok.is(Token::semicolon)) {
-        data.push_back(t_assign);
-        break;
-    } else {
-        // If parsing failed or no semicolon, reset lexer state
-        Tok = prev_token;
-        Lex.setBufferPtr(prev_buffer);
-    }
+            // 2. Attempt to parse a ternary assignment
+            TernaryAssignment *t_assign = parseTernaryAssign();
+            if (t_assign && Tok.is(Token::semicolon))
+            {
+                data.push_back(t_assign);
+                break;
+            }
+            else
+            {
+                // If parsing failed or no semicolon, reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
 
-    // 3. Attempt to parse a variable assignment
-    Assignment *a_var = parseVarAssign();
-    if (a_var && Tok.is(Token::semicolon)) {
-        data.push_back(a_var);
-        break;
-    } else {
-        // Reset lexer state
-        Tok = prev_token;
-        Lex.setBufferPtr(prev_buffer);
-    }
+            // 3. Attempt to parse a variable assignment
+            Assignment *a_var = parseVarAssign();
+            if (a_var && Tok.is(Token::semicolon))
+            {
+                data.push_back(a_var);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
 
-    // 4. Attempt to parse a float assignment
-    Assignment *a_float = parseFloatAssign();
-    if (a_float && Tok.is(Token::semicolon)) {
-        data.push_back(a_float);
-        break;
-    } else {
-        // Reset lexer state
-        Tok = prev_token;
-        Lex.setBufferPtr(prev_buffer);
-    }
+            // 4. Attempt to parse a float assignment
+            Assignment *a_float = parseFloatAssign();
+            if (a_float && Tok.is(Token::semicolon))
+            {
+                data.push_back(a_float);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
 
-    // 5. Attempt to parse a boolean assignment
-    Assignment *a_bool = parseBoolAssign();
-    if (a_bool && Tok.is(Token::semicolon)) {
-        data.push_back(a_bool);
-        break;
-    } else {
-        // Reset lexer state
-        Tok = prev_token;
-        Lex.setBufferPtr(prev_buffer);
-    }
+            // 5. Attempt to parse a boolean assignment
+            Assignment *a_bool = parseBoolAssign();
+            if (a_bool && Tok.is(Token::semicolon))
+            {
+                data.push_back(a_bool);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
 
-    // 6. Attempt to parse an integer assignment
-    Assignment *a_int = parseIntAssign();
-    if (a_int && Tok.is(Token::semicolon)) {
-        data.push_back(a_int);
-        break;
-    } else {
-        // If all parsing attempts fail, handle error
-        goto _error;
-    }
+            // 6. Attempt to parse an integer assignment
+            Assignment *a_int = parseIntAssign();
+            if (a_int && Tok.is(Token::semicolon))
+            {
+                data.push_back(a_int);
+                break;
+            }
+            else
+            {
+                // If all parsing attempts fail, handle error
+                goto _error;
+            }
 
-    break;
-}
-        case Token::KW_if: {
+            break;
+        }
+        case Token::KW_if:
+        {
             IfStmt *i;
             i = parseIf();
             if (i)
                 data.push_back(i);
             else
                 goto _error;
-            
+
             break;
         }
-        case Token::KW_while: {
+        case Token::KW_while:
+        {
             WhileStmt *w;
             w = parseWhile();
             if (w)
                 data.push_back(w);
-            else {
+            else
+            {
                 goto _error;
             }
             break;
         }
-        case Token::KW_for: {
+        case Token::KW_for:
+        {
             ForStmt *f;
             f = parseFor();
             if (f)
                 data.push_back(f);
-            else {
+            else
+            {
                 goto _error;
             }
             break;
         }
-        case Token::KW_do: {
-        DoWhileStmt *d;
-        d = parseDoWhile();
-        if (d)
-            data.push_back(d);
-        else
-            goto _error;
-        break;
-    }
-        case Token::KW_switch: {
-        SwitchStmt *s;
-        s = parseSwitch();
-        if (s)
-            data.push_back(s);
-        else
-            goto _error;
-        break;
-    }
-        case Token::KW_min: {
-        MinStmt *m;
-        m = parseMin();
-        if (m)
-            data.push_back(m);
-        else
-            goto _error;
-        break;
-    }
-        case Token::KW_max: {
-        MaxStmt *m;
-        m = parseMax();
-        if (m)
-            data.push_back(m);
-        else
-            goto _error;
-        break;
-    }
-        case Token::KW_mean: {
-        MeanStmt *mean;
-        mean = parseMean();
-        if (mean)
-            data.push_back(mean);
-        else
-            goto _error;
-        break;
-    }
-        case Token::KW_sqrtN: {
-        SqrtNStmt *sqrtN;
-        sqrtN = parseSqrtN();
-        if (sqrtN)
-            data.push_back(sqrtN);
-        else
-            goto _error;
-        break;
-    }
-        case Token::KW_print: {
+        case Token::KW_do:
+        {
+            DoWhileStmt *d;
+            d = parseDoWhile();
+            if (d)
+                data.push_back(d);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_switch:
+        {
+            SwitchStmt *s;
+            s = parseSwitch();
+            if (s)
+                data.push_back(s);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_min:
+        {
+            MinStmt *m;
+            m = parseMin();
+            if (m)
+                data.push_back(m);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_max:
+        {
+            MaxStmt *m;
+            m = parseMax();
+            if (m)
+                data.push_back(m);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_mean:
+        {
+            MeanStmt *mean;
+            mean = parseMean();
+            if (mean)
+                data.push_back(mean);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_sqrtN:
+        {
+            SqrtNStmt *sqrtN;
+            sqrtN = parseSqrtN();
+            if (sqrtN)
+                data.push_back(sqrtN);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_print:
+        {
             PrintStmt *p;
             p = parsePrint();
             if (p)
                 data.push_back(p);
-            else {
+            else
+            {
                 goto _error;
             }
             break;
         }
-       
-        default: {
+
+        default:
+        {
             error();
 
             goto _error;
@@ -240,16 +279,14 @@ Program *Parser::parseProgram()
         }
         }
         advance();
-        
     }
-    
+
     return new Program(data);
 _error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
 }
-
 
 DeclarationInt *Parser::parseIntDec()
 {
@@ -258,13 +295,15 @@ DeclarationInt *Parser::parseIntDec()
     llvm::SmallVector<Expr *> Values;
 
     // Ensure the current token is 'int'
-    if (expect(Token::KW_int)){
+    if (expect(Token::KW_int))
+    {
         goto _error;
     }
     advance();
 
     // Parse the first identifier
-    if (expect(Token::ident)){
+    if (expect(Token::ident))
+    {
         goto _error;
     }
     Vars.push_back(Tok.getText());
@@ -274,7 +313,8 @@ DeclarationInt *Parser::parseIntDec()
     while (Tok.is(Token::comma))
     {
         advance();
-        if (expect(Token::ident)){
+        if (expect(Token::ident))
+        {
             goto _error;
         }
         Vars.push_back(Tok.getText());
@@ -288,9 +328,12 @@ DeclarationInt *Parser::parseIntDec()
 
         // Parse the first expression
         E = parseExpr();
-        if(E){
+        if (E)
+        {
             Values.push_back(E);
-        } else {
+        }
+        else
+        {
             goto _error;
         }
 
@@ -299,9 +342,12 @@ DeclarationInt *Parser::parseIntDec()
         {
             advance();
             E = parseExpr();
-            if(E){
+            if (E)
+            {
                 Values.push_back(E);
-            } else {
+            }
+            else
+            {
                 goto _error;
             }
         }
@@ -315,19 +361,21 @@ DeclarationInt *Parser::parseIntDec()
     }
 
     // Check that we don't have more values than variables
-    if(Values.size() > Vars.size()){
+    if (Values.size() > Vars.size())
+    {
         llvm::errs() << "Error: More values than variables in declaration.\n";
         goto _error;
     }
 
     // Expect a semicolon at the end
-    if (expect(Token::semicolon)){
+    if (expect(Token::semicolon))
+    {
         goto _error;
     }
 
     return new DeclarationInt(Vars, Values);
 
-_error: 
+_error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
@@ -340,13 +388,15 @@ DeclarationBool *Parser::parseBoolDec()
     llvm::SmallVector<Logic *> Values;
 
     // Ensure the current token is 'bool'
-    if (expect(Token::KW_bool)){
+    if (expect(Token::KW_bool))
+    {
         goto _error;
     }
     advance();
 
     // Parse the first identifier
-    if (expect(Token::ident)){
+    if (expect(Token::ident))
+    {
         goto _error;
     }
     Vars.push_back(Tok.getText());
@@ -356,7 +406,8 @@ DeclarationBool *Parser::parseBoolDec()
     while (Tok.is(Token::comma))
     {
         advance();
-        if (expect(Token::ident)){
+        if (expect(Token::ident))
+        {
             goto _error;
         }
         Vars.push_back(Tok.getText());
@@ -370,9 +421,12 @@ DeclarationBool *Parser::parseBoolDec()
 
         // Parse the first logic expression
         L = parseLogic();
-        if(L){
+        if (L)
+        {
             Values.push_back(L);
-        } else {
+        }
+        else
+        {
             goto _error;
         }
 
@@ -381,9 +435,12 @@ DeclarationBool *Parser::parseBoolDec()
         {
             advance();
             L = parseLogic();
-            if(L){
+            if (L)
+            {
                 Values.push_back(L);
-            } else {
+            }
+            else
+            {
                 goto _error;
             }
         }
@@ -397,25 +454,27 @@ DeclarationBool *Parser::parseBoolDec()
     }
 
     // Check that we don't have more values than variables
-    if(Values.size() > Vars.size()){
+    if (Values.size() > Vars.size())
+    {
         llvm::errs() << "Error: More values than variables in boolean declaration.\n";
         goto _error;
     }
 
     // Expect a semicolon at the end
-    if (expect(Token::semicolon)){
+    if (expect(Token::semicolon))
+    {
         goto _error;
     }
 
     return new DeclarationBool(Vars, Values);
 
-_error: 
+_error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
 }
 
-//new:
+// new:
 DeclarationFloat *Parser::parseFloatDec()
 {
     Expr *E = nullptr;
@@ -423,13 +482,15 @@ DeclarationFloat *Parser::parseFloatDec()
     llvm::SmallVector<Expr *> Values;
 
     // Ensure the current token is 'float'
-    if (expect(Token::KW_float)){
+    if (expect(Token::KW_float))
+    {
         goto _error;
     }
     advance();
 
     // Parse the first identifier
-    if (expect(Token::ident)){
+    if (expect(Token::ident))
+    {
         goto _error;
     }
     Vars.push_back(Tok.getText());
@@ -439,7 +500,8 @@ DeclarationFloat *Parser::parseFloatDec()
     while (Tok.is(Token::comma))
     {
         advance();
-        if (expect(Token::ident)){
+        if (expect(Token::ident))
+        {
             goto _error;
         }
         Vars.push_back(Tok.getText());
@@ -453,9 +515,12 @@ DeclarationFloat *Parser::parseFloatDec()
 
         // Parse the first expression
         E = parseExpr();
-        if(E){
+        if (E)
+        {
             Values.push_back(E);
-        } else {
+        }
+        else
+        {
             goto _error;
         }
 
@@ -464,9 +529,12 @@ DeclarationFloat *Parser::parseFloatDec()
         {
             advance();
             E = parseExpr();
-            if(E){
+            if (E)
+            {
                 Values.push_back(E);
-            } else {
+            }
+            else
+            {
                 goto _error;
             }
         }
@@ -480,46 +548,53 @@ DeclarationFloat *Parser::parseFloatDec()
     }
 
     // Check that we don't have more values than variables
-    if(Values.size() > Vars.size()){
+    if (Values.size() > Vars.size())
+    {
         llvm::errs() << "Error: More values than variables in float declaration.\n";
         goto _error;
     }
 
     // Expect a semicolon at the end
-    if (expect(Token::semicolon)){
+    if (expect(Token::semicolon))
+    {
         goto _error;
     }
 
     return new DeclarationFloat(Vars, Values);
 
-_error: 
+_error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
 }
 
-//new:
-DeclarationVar *Parser::parseVarDec() {
+// new:
+DeclarationVar *Parser::parseVarDec()
+{
     llvm::SmallVector<llvm::StringRef> Vars;
     llvm::SmallVector<AST *> Values;
     llvm::SmallVector<TypeKind> Types;
 
     // Ensure the current token is 'var'
-    if (expect(Token::KW_var)) {
+    if (expect(Token::KW_var))
+    {
         goto _error;
     }
     advance();
 
     // Parse the variable names
-    if (expect(Token::ident)) {
+    if (expect(Token::ident))
+    {
         goto _error;
     }
     Vars.push_back(Tok.getText());
     advance();
 
-    while (Tok.is(Token::comma)) {
+    while (Tok.is(Token::comma))
+    {
         advance();
-        if (expect(Token::ident)) {
+        if (expect(Token::ident))
+        {
             goto _error;
         }
         Vars.push_back(Tok.getText());
@@ -527,45 +602,57 @@ DeclarationVar *Parser::parseVarDec() {
     }
 
     // If an assignment operator is present, parse the expressions or logic
-    if (Tok.is(Token::assign)) {
+    if (Tok.is(Token::assign))
+    {
         advance();
 
         // Parse the first value (could be Expr or Logic)
         AST *Value = parseValue();
-        if (Value) {
+        if (Value)
+        {
             Values.push_back(Value);
-        } else {
+        }
+        else
+        {
             goto _error;
         }
 
         // Parse additional values separated by commas
-        while (Tok.is(Token::comma)) {
+        while (Tok.is(Token::comma))
+        {
             advance();
             Value = parseValue();
-            if (Value) {
+            if (Value)
+            {
                 Values.push_back(Value);
-            } else {
+            }
+            else
+            {
                 goto _error;
             }
         }
     }
 
     // Assign default values to remaining variables if needed
-    while (Values.size() < Vars.size()) {
+    while (Values.size() < Vars.size())
+    {
         // Assign default value (e.g., 0) to variables without assigned values
         Values.push_back(new Final(Final::Number, llvm::StringRef("0")));
     }
 
     // Error if more values than variables
-    if (Values.size() > Vars.size()) {
+    if (Values.size() > Vars.size())
+    {
         llvm::errs() << "Error: More values than variables in 'var' declaration.\n";
         goto _error;
     }
 
     // Infer types for each value
-    for (size_t i = 0; i < Values.size(); ++i) {
+    for (size_t i = 0; i < Values.size(); ++i)
+    {
         TypeKind type = inferType(Values[i]);
-        if (type == TypeKind::Unknown) {
+        if (type == TypeKind::Unknown)
+        {
             llvm::errs() << "Error: Unable to infer type for variable '" << Vars[i] << "'.\n";
             goto _error;
         }
@@ -573,7 +660,8 @@ DeclarationVar *Parser::parseVarDec() {
     }
 
     // Expect a semicolon at the end
-    if (expect(Token::semicolon)) {
+    if (expect(Token::semicolon))
+    {
         goto _error;
     }
 
@@ -585,46 +673,48 @@ _error:
     return nullptr;
 }
 
-
-//new:
+// new:
 DeclareDefine *Parser::parseDefineDec()
 {
     llvm::StringRef Name;
     Expr *Value = nullptr;
 
     // Ensure the current token is '#define'
-    if (expect(Token::KW_define)){
+    if (expect(Token::KW_define))
+    {
         goto _error;
     }
     advance();
 
     // Parse the identifier
-    if (expect(Token::ident)){
+    if (expect(Token::ident))
+    {
         goto _error;
     }
     Name = Tok.getText();
     advance();
 
     // Parse the value
-    if (expect(Token::number)){
+    if (!expect(Token::number)){
+        Value = new Final(Final::Number, Tok.getText());
+    }else if ((!expect(Token::floatNumber))){
+        Value = new Final(Final::FloatNumber, Tok.getText());
+    }else if ((!expect(Token::KW_true)) || (!expect(Token::KW_false))){
+        Value = new Final(Final::Bool , Tok.getText());
+    }else if ((!expect(Token::ident))){
+        Value = new Final(Final::Ident, Tok.getText());
+    }else{
         goto _error;
     }
-    Value = new Final(Final::Number, Tok.getText());
-    advance();
 
     // Expect a semicolon at the end (optional depending on syntax)
-    if (expect(Token::semicolon)){
-        goto _error;
-    }
-
     return new DeclareDefine(Name, Value);
 
-_error: 
+_error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
 }
-
 
 Assignment *Parser::parseBoolAssign()
 {
@@ -637,14 +727,14 @@ Assignment *Parser::parseBoolAssign()
     {
         goto _error;
     }
-    
+
     if (Tok.is(Token::assign))
     {
         AK = Assignment::Assign;
         advance();
-        L = parseLogic();   // check if expr is logical
+        L = parseLogic(); // check if expr is logical
 
-        if(L)
+        if (L)
         {
             if (!Tok.is(Token::semicolon))
             {
@@ -659,12 +749,11 @@ Assignment *Parser::parseBoolAssign()
     {
         goto _error;
     }
-    
+
 _error:
-        while (Tok.getKind() != Token::eoi)
-            advance();
-        return nullptr;
-    
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
 }
 
 Assignment *Parser::parseIntAssign()
@@ -709,7 +798,7 @@ Assignment *Parser::parseIntAssign()
     }
     advance();
 
-    E = parseExpr();  // Now handles both integer and float expressions
+    E = parseExpr(); // Now handles both integer and float expressions
     if (E)
     {
         return new Assignment(F, E, AK);
@@ -725,8 +814,7 @@ _error:
     return nullptr;
 }
 
-
-//done
+// done
 Assignment *Parser::parseFloatAssign()
 {
     Expr *E = nullptr;
@@ -769,7 +857,7 @@ Assignment *Parser::parseFloatAssign()
     }
     advance();
 
-    E = parseExpr();  // Now handles both integer and float expressions
+    E = parseExpr(); // Now handles both integer and float expressions
     if (E)
     {
         return new Assignment(F, E, AK);
@@ -785,14 +873,14 @@ _error:
     return nullptr;
 }
 
-//done
+// done
 Assignment *Parser::parseVarAssign()
 {
-    AST *Value = nullptr;   // Use AST* to accommodate both Expr* and Logic*
+    AST *Value = nullptr; // Use AST* to accommodate both Expr* and Logic*
     Final *F = nullptr;
     Assignment::AssignKind AK;
     Token prev_token;
-    const char* prev_buffer;
+    const char *prev_buffer;
     Expr *E = nullptr;
 
     F = dynamic_cast<Final *>(parseFinal());
@@ -872,9 +960,9 @@ _error:
     return nullptr;
 }
 
-
-//done
-TernaryAssignment *Parser::parseTernaryAssign() {
+// done
+TernaryAssignment *Parser::parseTernaryAssign()
+{
     Final *F = nullptr;
     Expr *E1 = nullptr;
     Expr *E2 = nullptr;
@@ -882,11 +970,13 @@ TernaryAssignment *Parser::parseTernaryAssign() {
     Assignment::AssignKind AK;
 
     F = dynamic_cast<Final *>(parseFinal());
-    if (F == nullptr) {
+    if (F == nullptr)
+    {
         goto _error;
     }
 
-    if (Tok.is(Token::assign)) {
+    if (Tok.is(Token::assign))
+    {
         AK = Assignment::Assign;
         advance();
 
@@ -911,11 +1001,13 @@ TernaryAssignment *Parser::parseTernaryAssign() {
             goto _error;
 
         if (expect(Token::semicolon))
-            goto _error;  // Consume semicolon here
+            goto _error; // Consume semicolon here
         advance();
 
         return new TernaryAssignment(F, Condition, E1, E2);
-    } else {
+    }
+    else
+    {
         goto _error;
     }
 
@@ -925,25 +1017,28 @@ _error:
     return nullptr;
 }
 
-
 UnaryOp *Parser::parseUnary()
 {
-    UnaryOp* Res = nullptr;
+    UnaryOp *Res = nullptr;
     llvm::StringRef var;
 
-    if (expect(Token::ident)){
+    if (expect(Token::ident))
+    {
         goto _error;
     }
 
     var = Tok.getText();
     advance();
-    if (Tok.getKind() == Token::plus_plus){
+    if (Tok.getKind() == Token::plus_plus)
+    {
         Res = new UnaryOp(UnaryOp::Plus_plus, var);
     }
-    else if(Tok.getKind() == Token::minus_minus){
+    else if (Tok.getKind() == Token::minus_minus)
+    {
         Res = new UnaryOp(UnaryOp::Minus_minus, var);
     }
-    else{
+    else
+    {
         goto _error;
     }
 
@@ -965,7 +1060,7 @@ Expr *Parser::parseExpr()
     {
         goto _error;
     }
-    
+
     while (Tok.isOneOf(Token::plus, Token::minus))
     {
         BinaryOp::Operator Op;
@@ -973,7 +1068,8 @@ Expr *Parser::parseExpr()
             Op = BinaryOp::Plus;
         else if (Tok.is(Token::minus))
             Op = BinaryOp::Minus;
-        else {
+        else
+        {
             error();
 
             goto _error;
@@ -1010,7 +1106,8 @@ Expr *Parser::parseTerm()
             Op = BinaryOp::Div;
         else if (Tok.is(Token::mod))
             Op = BinaryOp::Mod;
-        else {
+        else
+        {
             error();
 
             goto _error;
@@ -1043,7 +1140,8 @@ Expr *Parser::parseFactor()
         BinaryOp::Operator Op;
         if (Tok.is(Token::exp))
             Op = BinaryOp::Exp;
-        else {
+        else
+        {
             error();
             goto _error;
         }
@@ -1074,7 +1172,7 @@ Expr *Parser::parseFinal()
         advance();
         break;
     }
-    case Token::floatNumber:  // Handle float literals
+    case Token::floatNumber: // Handle float literals
     {
         Res = new Final(Final::FloatNumber, Tok.getText());
         advance();
@@ -1131,7 +1229,8 @@ Expr *Parser::parseFinal()
     {
         advance();
         Res = parseExpr();
-        if(Res == nullptr){
+        if (Res == nullptr)
+        {
             goto _error;
         }
         if (expect(Token::r_paren))
@@ -1153,7 +1252,6 @@ _error:
     return nullptr;
 }
 
-
 Logic *Parser::parseComparison()
 {
     Logic *Res = nullptr;
@@ -1161,8 +1259,9 @@ Logic *Parser::parseComparison()
     Expr *Left = nullptr;
     Expr *Right = nullptr;
     Token prev_Tok;
-    const char* prev_buffer;
-    if (Tok.is(Token::l_paren)) {
+    const char *prev_buffer;
+    if (Tok.is(Token::l_paren))
+    {
         advance();
         Res = parseLogic();
         if (Res == nullptr)
@@ -1172,60 +1271,65 @@ Logic *Parser::parseComparison()
         if (consume(Token::r_paren))
             goto _error;
     }
-    else {
-        if(Tok.is(Token::KW_true)){
+    else
+    {
+        if (Tok.is(Token::KW_true))
+        {
             Res = new Comparison(nullptr, nullptr, Comparison::True);
             advance();
             return Res;
         }
-        else if(Tok.is(Token::KW_false)){
+        else if (Tok.is(Token::KW_false))
+        {
             Res = new Comparison(nullptr, nullptr, Comparison::False);
             advance();
             return Res;
         }
-        else if(Tok.is(Token::ident)){
+        else if (Tok.is(Token::ident))
+        {
             Ident = new Final(Final::Ident, Tok.getText());
         }
         prev_Tok = Tok;
         prev_buffer = Lex.getBuffer();
         Left = parseExpr();
-        if(Left == nullptr)
+        if (Left == nullptr)
             goto _error;
-        
 
         Comparison::Operator Op;
-            if (Tok.is(Token::eq))
-                Op = Comparison::Equal;
-            else if (Tok.is(Token::neq))
-                Op = Comparison::Not_equal;
-            else if (Tok.is(Token::gt))
-                Op = Comparison::Greater;
-            else if (Tok.is(Token::lt))
-                Op = Comparison::Less;
-            else if (Tok.is(Token::gte))
-                Op = Comparison::Greater_equal;
-            else if (Tok.is(Token::lte))
-                Op = Comparison::Less_equal;    
-            else {
-                if (Ident){
-                    Tok = prev_Tok;
-                    Lex.setBufferPtr(prev_buffer);
-                    Res = new Comparison(Ident, nullptr, Comparison::Ident);
-                    advance();
-                    return Res;
-                }
-                goto _error;
-            }
-            advance();
-            Right = parseExpr();
-            if (Right == nullptr)
+        if (Tok.is(Token::eq))
+            Op = Comparison::Equal;
+        else if (Tok.is(Token::neq))
+            Op = Comparison::Not_equal;
+        else if (Tok.is(Token::gt))
+            Op = Comparison::Greater;
+        else if (Tok.is(Token::lt))
+            Op = Comparison::Less;
+        else if (Tok.is(Token::gte))
+            Op = Comparison::Greater_equal;
+        else if (Tok.is(Token::lte))
+            Op = Comparison::Less_equal;
+        else
+        {
+            if (Ident)
             {
-                goto _error;
+                Tok = prev_Tok;
+                Lex.setBufferPtr(prev_buffer);
+                Res = new Comparison(Ident, nullptr, Comparison::Ident);
+                advance();
+                return Res;
             }
-            
-            Res = new Comparison(Left, Right, Op);
+            goto _error;
+        }
+        advance();
+        Right = parseExpr();
+        if (Right == nullptr)
+        {
+            goto _error;
+        }
+
+        Res = new Comparison(Left, Right, Op);
     }
-    
+
     return Res;
 
 _error:
@@ -1249,9 +1353,10 @@ Logic *Parser::parseLogic()
             Op = LogicalExpr::And;
         else if (Tok.is(Token::KW_or))
             Op = LogicalExpr::Or;
-        else if (Tok.is(Token::KW_xor))  // Handle xor token
+        else if (Tok.is(Token::KW_xor)) // Handle xor token
             Op = LogicalExpr::Xor;
-        else {
+        else
+        {
             error();
             goto _error;
         }
@@ -1271,7 +1376,6 @@ _error:
     return nullptr;
 }
 
-
 IfStmt *Parser::parseIf()
 {
     llvm::SmallVector<AST *> ifStmts;
@@ -1280,20 +1384,21 @@ IfStmt *Parser::parseIf()
     llvm::SmallVector<AST *> Stmts;
     Logic *Cond = nullptr;
     Token prev_token_if;
-    const char* prev_buffer_if;
+    const char *prev_buffer_if;
     Token prev_token_elif;
-    const char* prev_buffer_elif;
+    const char *prev_buffer_elif;
     bool hasElif = false;
     bool hasElse = false;
 
-
-    if (expect(Token::KW_if)){
+    if (expect(Token::KW_if))
+    {
         goto _error;
     }
 
     advance();
 
-    if (expect(Token::l_paren)){
+    if (expect(Token::l_paren))
+    {
         goto _error;
     }
 
@@ -1305,26 +1410,28 @@ IfStmt *Parser::parseIf()
         goto _error;
     }
 
-    if (expect(Token::r_paren)){
-        goto _error;
-    }
-        
-    advance();
-
-    if (expect(Token::l_brace)){
+    if (expect(Token::r_paren))
+    {
         goto _error;
     }
 
     advance();
-    
+
+    if (expect(Token::l_brace))
+    {
+        goto _error;
+    }
+
+    advance();
+
     ifStmts = getBody();
-        
-    if(ifStmts.empty())
+
+    if (ifStmts.empty())
         goto _error;
-    
+
     prev_token_if = Tok;
     prev_buffer_if = Lex.getBuffer();
-    
+
     advance();
 
     while (true)
@@ -1336,8 +1443,9 @@ IfStmt *Parser::parseIf()
             {
                 hasElif = true;
                 advance();
-                
-                if (expect(Token::l_paren)){
+
+                if (expect(Token::l_paren))
+                {
                     goto _error;
                 }
 
@@ -1350,13 +1458,15 @@ IfStmt *Parser::parseIf()
                     goto _error;
                 }
 
-                if (expect(Token::r_paren)){
+                if (expect(Token::r_paren))
+                {
                     goto _error;
                 }
 
                 advance();
 
-                if (expect(Token::l_brace)){
+                if (expect(Token::l_brace))
+                {
                     goto _error;
                 }
 
@@ -1365,12 +1475,12 @@ IfStmt *Parser::parseIf()
                 Stmts = getBody();
                 prev_token_elif = Tok;
                 prev_buffer_elif = Lex.getBuffer();
-                
-                if(!Stmts.empty())
+
+                if (!Stmts.empty())
                     advance();
                 else
                     goto _error;
-                
+
                 elifStmt *elif = new elifStmt(Cond, Stmts);
                 elifStmts.push_back(elif);
             }
@@ -1378,15 +1488,16 @@ IfStmt *Parser::parseIf()
             {
                 hasElse = true;
 
-                if (expect(Token::l_brace)){
+                if (expect(Token::l_brace))
+                {
                     goto _error;
                 }
 
                 advance();
 
                 elseStmts = getBody();
-                
-                if(elseStmts.empty())
+
+                if (elseStmts.empty())
                     goto _error;
 
                 break;
@@ -1396,15 +1507,17 @@ IfStmt *Parser::parseIf()
             break;
     }
 
-    if(hasElif && !hasElse){
+    if (hasElif && !hasElse)
+    {
         Tok = prev_token_elif;
         Lex.setBufferPtr(prev_buffer_elif);
     }
-    else if(!hasElif && !hasElse){
+    else if (!hasElif && !hasElse)
+    {
         Tok = prev_token_if;
         Lex.setBufferPtr(prev_buffer_if);
     }
-        
+
     return new IfStmt(Cond, ifStmts, elseStmts, elifStmts);
 
 _error:
@@ -1415,34 +1528,53 @@ _error:
 
 PrintStmt *Parser::parsePrint()
 {
-    llvm::StringRef Var;
-    if (expect(Token::KW_print)){
+    // llvm::StringRef Var;
+    Expr *Value = nullptr;
+    if (expect(Token::KW_print))
+    {
         goto _error;
     }
     advance();
-    if (expect(Token::l_paren)){
+    if (expect(Token::l_paren))
+    {
         goto _error;
     }
     advance();
-    if (expect(Token::ident)){
+    // if (expect(Token::ident))
+    // {
+    //     goto _error;
+    // }
+    // Var = Tok.getText();
+
+    if (!expect(Token::number)){
+        Value = new Final(Final::Number, Tok.getText());
+    }else if ((!expect(Token::floatNumber))){
+        Value = new Final(Final::FloatNumber, Tok.getText());
+    }else if ((!expect(Token::KW_true)) || (!expect(Token::KW_false))){
+        Value = new Final(Final::Bool , Tok.getText());
+    }else if ((!expect(Token::ident))){
+        Value = new Final(Final::Ident, Tok.getText());
+    }else{
         goto _error;
     }
-    Var = Tok.getText();
+
+
     advance();
-    if (expect(Token::r_paren)){
+    if (expect(Token::r_paren))
+    {
         goto _error;
     }
     advance();
-    if (expect(Token::semicolon)){
+    if (expect(Token::semicolon))
+    {
         goto _error;
     }
-    return new PrintStmt(Var);
+    return new PrintStmt(Value);
 
 _error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
-
 }
 
 WhileStmt *Parser::parseWhile()
@@ -1450,13 +1582,15 @@ WhileStmt *Parser::parseWhile()
     llvm::SmallVector<AST *> Body;
     Logic *Cond = nullptr;
 
-    if (expect(Token::KW_while)){
+    if (expect(Token::KW_while))
+    {
         goto _error;
     }
-        
+
     advance();
 
-    if(expect(Token::l_paren)){
+    if (expect(Token::l_paren))
+    {
         goto _error;
     }
 
@@ -1467,22 +1601,23 @@ WhileStmt *Parser::parseWhile()
     {
         goto _error;
     }
-    if(expect(Token::r_paren)){
+    if (expect(Token::r_paren))
+    {
         goto _error;
     }
 
     advance();
 
-    if (expect(Token::l_brace)){
+    if (expect(Token::l_brace))
+    {
         goto _error;
     }
 
     advance();
 
     Body = getBody();
-    if(Body.empty())
+    if (Body.empty())
         goto _error;
-        
 
     return new WhileStmt(Cond, Body);
 
@@ -1500,15 +1635,17 @@ ForStmt *Parser::parseFor()
     UnaryOp *ThirdUnary = nullptr;
     llvm::SmallVector<AST *> Body;
     Token prev_token;
-    const char* prev_buffer;
+    const char *prev_buffer;
 
-    if (expect(Token::KW_for)){
+    if (expect(Token::KW_for))
+    {
         goto _error;
     }
-        
+
     advance();
 
-    if(expect(Token::l_paren)){
+    if (expect(Token::l_paren))
+    {
         goto _error;
     }
 
@@ -1518,11 +1655,12 @@ ForStmt *Parser::parseFor()
 
     if (First == nullptr)
         goto _error;
-        
-    if (First->getAssignKind() != Assignment::Assign)    // The first part can only have a '=' sign
+
+    if (First->getAssignKind() != Assignment::Assign) // The first part can only have a '=' sign
         goto _error;
 
-    if(expect(Token::semicolon)){
+    if (expect(Token::semicolon))
+    {
         goto _error;
     }
 
@@ -1532,8 +1670,9 @@ ForStmt *Parser::parseFor()
 
     if (Second == nullptr)
         goto _error;
-        
-    if(expect(Token::semicolon)){
+
+    if (expect(Token::semicolon))
+    {
         goto _error;
     }
 
@@ -1544,29 +1683,32 @@ ForStmt *Parser::parseFor()
 
     ThirdAssign = parseIntAssign();
 
-    if (ThirdAssign == nullptr){
+    if (ThirdAssign == nullptr)
+    {
         Tok = prev_token;
         Lex.setBufferPtr(prev_buffer);
 
         ThirdUnary = parseUnary();
-        if (ThirdUnary == nullptr){
+        if (ThirdUnary == nullptr)
+        {
             goto _error;
         }
-
     }
-    else{
-        if(ThirdAssign->getAssignKind() == Assignment::Assign)   // The third part cannot have only '=' sign
+    else
+    {
+        if (ThirdAssign->getAssignKind() == Assignment::Assign) // The third part cannot have only '=' sign
             goto _error;
     }
 
-
-    if(expect(Token::r_paren)){
+    if (expect(Token::r_paren))
+    {
         goto _error;
     }
 
     advance();
 
-    if(expect(Token::l_brace)){
+    if (expect(Token::l_brace))
+    {
         goto _error;
     }
 
@@ -1582,38 +1724,41 @@ ForStmt *Parser::parseFor()
 _error:
     while (Tok.getKind() != Token::eoi)
         advance();
-    return nullptr;  
-
+    return nullptr;
 }
 
-//new:
+// new:
 DoWhileStmt *Parser::parseDoWhile()
 {
     llvm::SmallVector<AST *> Body;
     Logic *Cond = nullptr;
 
-    if (expect(Token::KW_do)){
+    if (expect(Token::KW_do))
+    {
         goto _error;
     }
     advance();
 
-    if (expect(Token::l_brace)){
+    if (expect(Token::l_brace))
+    {
         goto _error;
     }
     advance();
 
     Body = getBody();
-    if(Body.empty())
+    if (Body.empty())
         goto _error;
 
     advance(); // Consume '}'
 
-    if (expect(Token::KW_while)){
+    if (expect(Token::KW_while))
+    {
         goto _error;
     }
     advance();
 
-    if (expect(Token::l_paren)){
+    if (expect(Token::l_paren))
+    {
         goto _error;
     }
     advance();
@@ -1624,12 +1769,14 @@ DoWhileStmt *Parser::parseDoWhile()
         goto _error;
     }
 
-    if (expect(Token::r_paren)){
+    if (expect(Token::r_paren))
+    {
         goto _error;
     }
     advance();
 
-    if (expect(Token::semicolon)){
+    if (expect(Token::semicolon))
+    {
         goto _error;
     }
 
@@ -1641,19 +1788,32 @@ _error:
     return nullptr;
 }
 
-//new:
+// new:
+
+// switch (expression)
+// {
+// case
+//     break;
+
+// default:
+//     break;
+// }
 SwitchStmt *Parser::parseSwitch()
 {
     Expr *SwitchExpr = nullptr;
     llvm::SmallVector<CaseStmt *> Cases;
     DefaultStmt *DefaultCase = nullptr;
 
-    if (expect(Token::KW_switch)){
+    if (expect(Token::KW_switch))
+    {
+        llvm::errs() << "error in KW_switch";
         goto _error;
     }
     advance();
 
-    if (expect(Token::l_paren)){
+    if (expect(Token::l_paren))
+    {
+        llvm::errs() << "error in l_paren";
         goto _error;
     }
     advance();
@@ -1661,15 +1821,20 @@ SwitchStmt *Parser::parseSwitch()
     SwitchExpr = parseExpr();
     if (SwitchExpr == nullptr)
     {
+        llvm::errs() << "error in SwitchExpr";
         goto _error;
     }
 
-    if (expect(Token::r_paren)){
+    if (expect(Token::r_paren))
+    {
+        llvm::errs() << "error in r_paren";
         goto _error;
     }
     advance();
 
-    if (expect(Token::l_brace)){
+    if (expect(Token::l_brace))
+    {
+        llvm::errs() << "error in l_brace";
         goto _error;
     }
     advance();
@@ -1682,14 +1847,20 @@ SwitchStmt *Parser::parseSwitch()
 
             Expr *CaseExpr = parseExpr();
             if (CaseExpr == nullptr)
-                goto _error;
+            {
+                llvm::errs() << "error in CaseExpr";
 
-            if (expect(Token::colonMark)){
+                goto _error;
+            }
+
+            if (expect(Token::colonMark))
+            {
+                llvm::errs() << "error in colonMark-case";
                 goto _error;
             }
             advance();
 
-            llvm::SmallVector<AST *> Body = getBody();
+            llvm::SmallVector<AST *> Body = getCaseBody();
 
             Cases.push_back(new CaseStmt(CaseExpr, Body));
         }
@@ -1697,23 +1868,27 @@ SwitchStmt *Parser::parseSwitch()
         {
             advance();
 
-            if (expect(Token::colonMark)){
+            if (expect(Token::colonMark))
+            {
+                llvm::errs() << "error in colonMark-default";
                 goto _error;
             }
             advance();
 
-            llvm::SmallVector<AST *> Body = getBody();
+            llvm::SmallVector<AST *> Body = getCaseBody();
 
             DefaultCase = new DefaultStmt(Body);
         }
         else
         {
+            llvm::errs() << "error in out of if ";
             goto _error;
         }
-        advance();
     }
 
-    if (expect(Token::r_brace)){
+    if (expect(Token::r_brace))
+    {
+        llvm::errs() << "error in r_brace";
         goto _error;
     }
 
@@ -1725,18 +1900,20 @@ _error:
     return nullptr;
 }
 
-//new:
+// new:
 MinStmt *Parser::parseMin()
 {
     Expr *E1 = nullptr;
     Expr *E2 = nullptr;
 
-    if (expect(Token::KW_min)){
+    if (expect(Token::KW_min))
+    {
         goto _error;
     }
     advance();
 
-    if (expect(Token::l_paren)){
+    if (expect(Token::l_paren))
+    {
         goto _error;
     }
     advance();
@@ -1745,7 +1922,8 @@ MinStmt *Parser::parseMin()
     if (E1 == nullptr)
         goto _error;
 
-    if (expect(Token::comma)){
+    if (expect(Token::comma))
+    {
         goto _error;
     }
     advance();
@@ -1754,12 +1932,14 @@ MinStmt *Parser::parseMin()
     if (E2 == nullptr)
         goto _error;
 
-    if (expect(Token::r_paren)){
+    if (expect(Token::r_paren))
+    {
         goto _error;
     }
     advance();
 
-    if (expect(Token::semicolon)){
+    if (expect(Token::semicolon))
+    {
         goto _error;
     }
 
@@ -1771,18 +1951,20 @@ _error:
     return nullptr;
 }
 
-//new:
+// new:
 MaxStmt *Parser::parseMax()
 {
     Expr *E1 = nullptr;
     Expr *E2 = nullptr;
 
-    if (expect(Token::KW_max)){
+    if (expect(Token::KW_max))
+    {
         goto _error;
     }
     advance();
 
-    if (expect(Token::l_paren)){
+    if (expect(Token::l_paren))
+    {
         goto _error;
     }
     advance();
@@ -1791,7 +1973,8 @@ MaxStmt *Parser::parseMax()
     if (E1 == nullptr)
         goto _error;
 
-    if (expect(Token::comma)){
+    if (expect(Token::comma))
+    {
         goto _error;
     }
     advance();
@@ -1800,12 +1983,14 @@ MaxStmt *Parser::parseMax()
     if (E2 == nullptr)
         goto _error;
 
-    if (expect(Token::r_paren)){
+    if (expect(Token::r_paren))
+    {
         goto _error;
     }
     advance();
 
-    if (expect(Token::semicolon)){
+    if (expect(Token::semicolon))
+    {
         goto _error;
     }
 
@@ -1817,17 +2002,19 @@ _error:
     return nullptr;
 }
 
-//new:
+// new:
 MeanStmt *Parser::parseMean()
 {
     llvm::SmallVector<Expr *> Values;
     Expr *E = nullptr;
-    if (expect(Token::KW_mean)){
+    if (expect(Token::KW_mean))
+    {
         goto _error;
     }
     advance();
 
-    if (expect(Token::l_paren)){
+    if (expect(Token::l_paren))
+    {
         goto _error;
     }
     advance();
@@ -1843,19 +2030,24 @@ MeanStmt *Parser::parseMean()
     {
         advance();
         E = parseExpr();
-        if(E){
+        if (E)
+        {
             Values.push_back(E);
-        } else {
+        }
+        else
+        {
             goto _error;
         }
     }
 
-    if (expect(Token::r_paren)){
+    if (expect(Token::r_paren))
+    {
         goto _error;
     }
     advance();
 
-    if (expect(Token::semicolon)){
+    if (expect(Token::semicolon))
+    {
         goto _error;
     }
 
@@ -1867,18 +2059,20 @@ _error:
     return nullptr;
 }
 
-//new:
+// new:
 SqrtNStmt *Parser::parseSqrtN()
 {
     Expr *Base = nullptr;
     Expr *NthRoot = nullptr;
 
-    if (expect(Token::KW_sqrtN)){
+    if (expect(Token::KW_sqrtN))
+    {
         goto _error;
     }
     advance();
 
-    if (expect(Token::l_paren)){
+    if (expect(Token::l_paren))
+    {
         goto _error;
     }
     advance();
@@ -1887,7 +2081,8 @@ SqrtNStmt *Parser::parseSqrtN()
     if (Base == nullptr)
         goto _error;
 
-    if (expect(Token::comma)){
+    if (expect(Token::comma))
+    {
         goto _error;
     }
     advance();
@@ -1896,12 +2091,14 @@ SqrtNStmt *Parser::parseSqrtN()
     if (NthRoot == nullptr)
         goto _error;
 
-    if (expect(Token::r_paren)){
+    if (expect(Token::r_paren))
+    {
         goto _error;
     }
     advance();
 
-    if (expect(Token::semicolon)){
+    if (expect(Token::semicolon))
+    {
         goto _error;
     }
 
@@ -1913,7 +2110,244 @@ _error:
     return nullptr;
 }
 
+llvm::SmallVector<AST *> Parser::getCaseBody()
+{
+    llvm::SmallVector<AST *> body;
+    while (!Tok.is(Token::KW_case) && !Tok.is(Token::KW_default) && !Tok.is(Token::r_brace))
+    {
+        switch (Tok.getKind())
+        {
 
+        case Token::ident:
+        {
+            Token prev_token = Tok;
+            const char *prev_buffer = Lex.getBuffer();
+
+            // 1. Attempt to parse a unary operation
+            UnaryOp *u = parseUnary();
+            if (u && Tok.is(Token::semicolon))
+            {
+                body.push_back(u);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
+
+            // 2. Attempt to parse a ternary assignment
+            TernaryAssignment *t_assign = parseTernaryAssign();
+            if (t_assign && Tok.is(Token::semicolon))
+            {
+                body.push_back(t_assign);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
+
+            // 3. Attempt to parse a variable assignment
+            Assignment *a_var = parseVarAssign();
+            if (a_var && Tok.is(Token::semicolon))
+            {
+                body.push_back(a_var);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
+
+            // 4. Attempt to parse a float assignment
+            Assignment *a_float = parseFloatAssign();
+            if (a_float && Tok.is(Token::semicolon))
+            {
+                body.push_back(a_float);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
+
+            // 5. Attempt to parse a boolean assignment
+            Assignment *a_bool = parseBoolAssign();
+            if (a_bool && Tok.is(Token::semicolon))
+            {
+                body.push_back(a_bool);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
+
+            // 6. Attempt to parse an integer assignment
+            Assignment *a_int = parseIntAssign();
+            if (a_int && Tok.is(Token::semicolon))
+            {
+                body.push_back(a_int);
+                break;
+            }
+            else
+            {
+                // Handle error if all parsing attempts fail
+                goto _error;
+            }
+
+            break;
+        }
+
+        case Token::KW_if:
+        {
+            IfStmt *i;
+            i = parseIf();
+            if (i)
+                body.push_back(i);
+            else
+                goto _error;
+
+            break;
+        }
+        case Token::KW_while:
+        {
+            WhileStmt *w;
+            w = parseWhile();
+            if (w)
+                body.push_back(w);
+            else
+            {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_for:
+        {
+            ForStmt *f;
+            f = parseFor();
+            if (f)
+                body.push_back(f);
+            else
+            {
+                goto _error;
+            }
+            break;
+        }
+
+        case Token::KW_do:
+        {
+            DoWhileStmt *d;
+            d = parseDoWhile();
+            if (d)
+                body.push_back(d);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_switch:
+        {
+            SwitchStmt *s;
+            s = parseSwitch();
+            if (s)
+                body.push_back(s);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_print:
+        {
+            PrintStmt *p;
+            p = parsePrint();
+            if (p)
+                body.push_back(p);
+            else
+            {
+                goto _error;
+            }
+            break;
+        }
+        case Token::KW_min:
+        {
+            MinStmt *m;
+            m = parseMin();
+            if (m)
+                body.push_back(m);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_max:
+        {
+            MaxStmt *m;
+            m = parseMax();
+            if (m)
+                body.push_back(m);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_mean:
+        {
+            MeanStmt *mean;
+            mean = parseMean();
+            if (mean)
+                body.push_back(mean);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_sqrtN:
+        {
+            SqrtNStmt *sqrtN;
+            sqrtN = parseSqrtN();
+            if (sqrtN)
+                body.push_back(sqrtN);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_break:
+        {
+            advance();
+            if (expect(Token::semicolon))
+            {
+                goto _error;
+            }
+            BreakStmt* breaks;
+            body.push_back(breaks);
+            break;
+        }
+        default:
+        {
+            error();
+
+            goto _error;
+            break;
+        }
+        }
+        advance();
+    }
+    if (Tok.is(Token::KW_case) || Tok.is(Token::KW_default) || Tok.is(Token::r_brace))
+    {
+        return body;
+    }
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return body;
+}
 
 llvm::SmallVector<AST *> Parser::getBody()
 {
@@ -1922,174 +2356,219 @@ llvm::SmallVector<AST *> Parser::getBody()
     {
         switch (Tok.getKind())
         {
-        
-        case Token::ident: {
-    Token prev_token = Tok;
-    const char* prev_buffer = Lex.getBuffer();
 
-    // 1. Attempt to parse a unary operation
-    UnaryOp *u = parseUnary();
-    if (u && Tok.is(Token::semicolon)) {
-        body.push_back(u);
-        break;
-    } else {
-        // Reset lexer state
-        Tok = prev_token;
-        Lex.setBufferPtr(prev_buffer);
-    }
+        case Token::ident:
+        {
+            Token prev_token = Tok;
+            const char *prev_buffer = Lex.getBuffer();
 
-    // 2. Attempt to parse a ternary assignment
-    TernaryAssignment *t_assign = parseTernaryAssign();
-    if (t_assign && Tok.is(Token::semicolon)) {
-        body.push_back(t_assign);
-        break;
-    } else {
-        // Reset lexer state
-        Tok = prev_token;
-        Lex.setBufferPtr(prev_buffer);
-    }
+            // 1. Attempt to parse a unary operation
+            UnaryOp *u = parseUnary();
+            if (u && Tok.is(Token::semicolon))
+            {
+                body.push_back(u);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
 
-    // 3. Attempt to parse a variable assignment
-    Assignment *a_var = parseVarAssign();
-    if (a_var && Tok.is(Token::semicolon)) {
-        body.push_back(a_var);
-        break;
-    } else {
-        // Reset lexer state
-        Tok = prev_token;
-        Lex.setBufferPtr(prev_buffer);
-    }
+            // 2. Attempt to parse a ternary assignment
+            TernaryAssignment *t_assign = parseTernaryAssign();
+            if (t_assign && Tok.is(Token::semicolon))
+            {
+                body.push_back(t_assign);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
 
-    // 4. Attempt to parse a float assignment
-    Assignment *a_float = parseFloatAssign();
-    if (a_float && Tok.is(Token::semicolon)) {
-        body.push_back(a_float);
-        break;
-    } else {
-        // Reset lexer state
-        Tok = prev_token;
-        Lex.setBufferPtr(prev_buffer);
-    }
+            // 3. Attempt to parse a variable assignment
+            Assignment *a_var = parseVarAssign();
+            if (a_var && Tok.is(Token::semicolon))
+            {
+                body.push_back(a_var);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
 
-    // 5. Attempt to parse a boolean assignment
-    Assignment *a_bool = parseBoolAssign();
-    if (a_bool && Tok.is(Token::semicolon)) {
-        body.push_back(a_bool);
-        break;
-    } else {
-        // Reset lexer state
-        Tok = prev_token;
-        Lex.setBufferPtr(prev_buffer);
-    }
+            // 4. Attempt to parse a float assignment
+            Assignment *a_float = parseFloatAssign();
+            if (a_float && Tok.is(Token::semicolon))
+            {
+                body.push_back(a_float);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
 
-    // 6. Attempt to parse an integer assignment
-    Assignment *a_int = parseIntAssign();
-    if (a_int && Tok.is(Token::semicolon)) {
-        body.push_back(a_int);
-        break;
-    } else {
-        // Handle error if all parsing attempts fail
-        goto _error;
-    }
+            // 5. Attempt to parse a boolean assignment
+            Assignment *a_bool = parseBoolAssign();
+            if (a_bool && Tok.is(Token::semicolon))
+            {
+                body.push_back(a_bool);
+                break;
+            }
+            else
+            {
+                // Reset lexer state
+                Tok = prev_token;
+                Lex.setBufferPtr(prev_buffer);
+            }
 
-    break;
-}     
-        case Token::KW_if: {
+            // 6. Attempt to parse an integer assignment
+            Assignment *a_int = parseIntAssign();
+            if (a_int && Tok.is(Token::semicolon))
+            {
+                body.push_back(a_int);
+                break;
+            }
+            else
+            {
+                // Handle error if all parsing attempts fail
+                goto _error;
+            }
+
+            break;
+        }
+
+        case Token::KW_if:
+        {
             IfStmt *i;
             i = parseIf();
             if (i)
                 body.push_back(i);
             else
                 goto _error;
-            
+
             break;
         }
-        case Token::KW_while:{
+        case Token::KW_while:
+        {
             WhileStmt *w;
             w = parseWhile();
             if (w)
                 body.push_back(w);
-            else {
+            else
+            {
                 goto _error;
             }
             break;
         }
-        case Token::KW_for:{
+        case Token::KW_for:
+        {
             ForStmt *f;
             f = parseFor();
             if (f)
                 body.push_back(f);
-            else {
+            else
+            {
                 goto _error;
             }
             break;
         }
-        
-        case Token::KW_do: {
-                DoWhileStmt *d;
-                d = parseDoWhile();
-                if (d)
-                    body.push_back(d);
-                else
-                    goto _error;
-                break;
-            }
-        case Token::KW_switch: {
-                SwitchStmt *s;
-                s = parseSwitch();
-                if (s)
-                    body.push_back(s);
-                else
-                    goto _error;
-                break;
-            }
-        case Token::KW_print: {
+
+        case Token::KW_do:
+        {
+            DoWhileStmt *d;
+            d = parseDoWhile();
+            if (d)
+                body.push_back(d);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_switch:
+        {
+            SwitchStmt *s;
+            s = parseSwitch();
+            if (s)
+                body.push_back(s);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_print:
+        {
             PrintStmt *p;
             p = parsePrint();
             if (p)
                 body.push_back(p);
-            else {
+            else
+            {
                 goto _error;
             }
             break;
         }
-        case Token::KW_min: {
-                MinStmt *m;
-                m = parseMin();
-                if (m)
-                    body.push_back(m);
-                else
-                    goto _error;
-                break;
+        case Token::KW_min:
+        {
+            MinStmt *m;
+            m = parseMin();
+            if (m)
+                body.push_back(m);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_max:
+        {
+            MaxStmt *m;
+            m = parseMax();
+            if (m)
+                body.push_back(m);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_mean:
+        {
+            MeanStmt *mean;
+            mean = parseMean();
+            if (mean)
+                body.push_back(mean);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_sqrtN:
+        {
+            SqrtNStmt *sqrtN;
+            sqrtN = parseSqrtN();
+            if (sqrtN)
+                body.push_back(sqrtN);
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_break:
+        {
+            advance();
+            if (expect(Token::semicolon))
+            {
+                goto _error;
             }
-        case Token::KW_max: {
-                MaxStmt *m;
-                m = parseMax();
-                if (m)
-                    body.push_back(m);
-                else
-                    goto _error;
-                break;
-            }
-        case Token::KW_mean: {
-                MeanStmt *mean;
-                mean = parseMean();
-                if (mean)
-                    body.push_back(mean);
-                else
-                    goto _error;
-                break;
-            }
-        case Token::KW_sqrtN: {
-                SqrtNStmt *sqrtN;
-                sqrtN = parseSqrtN();
-                if (sqrtN)
-                    body.push_back(sqrtN);
-                else
-                    goto _error;
-                break;
-            }
-        default:{
+            BreakStmt* breaks;
+            body.push_back(breaks);
+            break;
+        }
+        default:
+        {
             error();
 
             goto _error;
@@ -2097,9 +2576,9 @@ llvm::SmallVector<AST *> Parser::getBody()
         }
         }
         advance();
-
     }
-    if(Tok.is(Token::r_brace)){
+    if (Tok.is(Token::r_brace))
+    {
         return body;
     }
 
@@ -2107,19 +2586,18 @@ _error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return body;
-
 }
-
 
 // handles var
 AST *Parser::parseValue()
 {
     // Try parsing an arithmetic expression
     Token prev_token = Tok;
-    const char* prev_buffer = Lex.getBuffer();
+    const char *prev_buffer = Lex.getBuffer();
 
     Expr *E = parseExpr();
-    if(E != nullptr){
+    if (E != nullptr)
+    {
         return E;
     }
 
@@ -2129,7 +2607,8 @@ AST *Parser::parseValue()
 
     // Try parsing a logical expression
     Logic *L = parseLogic();
-    if(L != nullptr){
+    if (L != nullptr)
+    {
         return L;
     }
 
@@ -2137,28 +2616,37 @@ AST *Parser::parseValue()
     return nullptr;
 }
 
-TypeKind Parser::inferType(AST *Value) {
-    if (auto *E = dynamic_cast<Expr *>(Value)) {
-        if (auto *F = dynamic_cast<Final *>(E)) {
+TypeKind Parser::inferType(AST *Value)
+{
+    if (auto *E = dynamic_cast<Expr *>(Value))
+    {
+        if (auto *F = dynamic_cast<Final *>(E))
+        {
             if (F->getKind() == Final::Number)
                 return TypeKind::Int;
             else if (F->getKind() == Final::FloatNumber)
                 return TypeKind::Float;
-            else if (F->getKind() == Final::Ident) {
+            else if (F->getKind() == Final::Ident)
+            {
                 // Lookup identifier type in the symbol table
                 // Placeholder: assume int
                 return TypeKind::Int;
             }
-        } else if (auto *C = dynamic_cast<CastExpr *>(E)) {
-            switch (C->getCastType()) {
-                case CastExpr::IntCast:
-                    return TypeKind::Int;
-                case CastExpr::FloatCast:
-                    return TypeKind::Float;
-                case CastExpr::BoolCast:
-                    return TypeKind::Bool;
+        }
+        else if (auto *C = dynamic_cast<CastExpr *>(E))
+        {
+            switch (C->getCastType())
+            {
+            case CastExpr::IntCast:
+                return TypeKind::Int;
+            case CastExpr::FloatCast:
+                return TypeKind::Float;
+            case CastExpr::BoolCast:
+                return TypeKind::Bool;
             }
-        } else if (auto *B = dynamic_cast<BinaryOp *>(E)) {
+        }
+        else if (auto *B = dynamic_cast<BinaryOp *>(E))
+        {
             // Infer type based on operands
             TypeKind LeftType = inferType(B->getLeft());
             TypeKind RightType = inferType(B->getRight());
@@ -2168,7 +2656,9 @@ TypeKind Parser::inferType(AST *Value) {
                 return TypeKind::Int;
         }
         // Add more cases as needed
-    } else if (auto *L = dynamic_cast<Logic *>(Value)) {
+    }
+    else if (auto *L = dynamic_cast<Logic *>(Value))
+    {
         // Logic expressions are of type Bool
         return TypeKind::Bool;
     }

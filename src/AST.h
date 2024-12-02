@@ -40,6 +40,7 @@ class MinStmt;
 class MaxStmt;
 class MeanStmt;
 class SqrtNStmt;
+class BreakStmt;
 
 // ASTVisitor class defines a visitor pattern to traverse the AST
 class ASTVisitor
@@ -281,7 +282,8 @@ public:
     {
         Ident,
         Number,
-        FloatNumber  // Represents float literals
+        FloatNumber,  // Represents float literals
+        Bool 
     };
 
 private:
@@ -646,12 +648,12 @@ public:
 class PrintStmt : public Program
 {
 private:
-  llvm::StringRef Var;
+  Expr *Value = nullptr;
   
 public:
-  PrintStmt(llvm::StringRef Var) : Var(Var) {}
+  PrintStmt(Expr *Value) : Value(Value) {}
 
-  llvm::StringRef getVar() { return Var; }
+  Expr* getVar() { return Value; }
 
   virtual void accept(ASTVisitor &V) override
   {
@@ -816,5 +818,17 @@ public:
     }
 };
 
+class BreakStmt : public Program
+{
+private:
+  
+public:
+  BreakStmt(){}
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
 
 #endif

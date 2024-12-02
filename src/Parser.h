@@ -5,7 +5,6 @@
 #include "Lexer.h"
 #include "llvm/Support/raw_ostream.h"
 
-
 class Parser
 {
     Lexer &Lex;    // retrieve the next token from the input
@@ -14,7 +13,7 @@ class Parser
 
     void error()
     {
-        llvm::errs() << "Unexpected Token: $" << Tok.getText()<< "$" << "\n";
+        // llvm::errs() << "Unexpected Token: $" << Tok.getText()<< "$" << "\n";
         HasError = true;
     }
 
@@ -26,10 +25,10 @@ class Parser
     {
         if (Tok.getKind() != Kind)
         {
-            llvm::errs() << "was not Expecting Token: $" << Tok.getText()<< "$" << "\n";
+            // llvm::errs() << "was not Expecting Token: $" << Tok.getText()<< "$" << "\n";
             return true;
         }
-        llvm::errs() << "was Expecting Token: $" << Tok.getText()<< "$" << "\n";  
+        // llvm::errs() << "was Expecting Token: $" << Tok.getText()<< "$" << "\n";
         return false;
     }
 
@@ -38,7 +37,7 @@ class Parser
     {
         if (expect(Kind))
             return true;
-        llvm::errs() << "consumed" << "\n";
+        // llvm::errs() << "consumed" << "\n";
         advance();
         return false;
     }
@@ -60,6 +59,7 @@ class Parser
     ForStmt *parseFor();
     PrintStmt *parsePrint();
     llvm::SmallVector<AST *> getBody();
+    llvm::SmallVector<AST *> getCaseBody();
 
     DeclarationFloat *parseFloatDec();
     DeclarationVar *parseVarDec();
@@ -75,8 +75,6 @@ class Parser
     SqrtNStmt *parseSqrtN();
     AST *parseValue();
 
-
-
 public:
     // initializes all members and retrieves the first token
     Parser(Lexer &Lex) : Lex(Lex), HasError(false)
@@ -88,7 +86,7 @@ public:
     bool hasError() { return HasError; }
 
     Program *parse();
-    
+
     TypeKind inferType(AST *Value);
 };
 
