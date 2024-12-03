@@ -93,7 +93,7 @@ Program *Parser::parseProgram()
 
             // 2. Attempt to parse a ternary assignment
             TernaryAssignment *t_assign = parseTernaryAssign();
-            if (t_assign && Tok.is(Token::semicolon))
+            if (t_assign)
             {
                 data.push_back(t_assign);
                 break;
@@ -269,7 +269,7 @@ Program *Parser::parseProgram()
             }
             break;
         }
-
+        case Token::KW_const:{}
         default:
         {
             error();
@@ -707,7 +707,7 @@ DeclareDefine *Parser::parseDefineDec()
         goto _error;
     }
 
-    // Expect a semicolon at the end (optional depending on syntax)
+    
     return new DeclareDefine(Name, Value);
 
 _error:
@@ -1775,11 +1775,7 @@ DoWhileStmt *Parser::parseDoWhile()
     }
     advance();
 
-    if (expect(Token::semicolon))
-    {
-        goto _error;
-    }
-
+    
     return new DoWhileStmt(Cond, Body);
 
 _error:
@@ -2665,3 +2661,37 @@ TypeKind Parser::inferType(AST *Value)
     // If unable to infer type
     return TypeKind::Unknown;
 }
+
+// Logic *Parser::parseNewForm()
+// {
+//     llvm::StringRef IdentName = Tok.getText();
+//     llvm::SmallVector<Expr *> values;
+//     advance();
+//     bool isNotIn = false;
+//     if (Tok.is(Token::KW_not))
+//     {
+//         isNotIn = true;
+//         advance();
+//     }
+//     if (expect(Token::KW_in))
+//         goto _error;
+//     advance();
+//     if (expect(Token::l_bracket))
+//         goto _error;
+//     advance();
+    
+//     do
+//     {
+//         if (expect(Token::number))
+//             goto _error;
+//         values.push_back(Tok.getText());
+//         advance();
+//     } while (Tok.is(Token::comma) && advance());
+//     if (expect(Token::r_bracket))
+//         goto _error;
+//     advance();
+//     return new InExpr(IdentName, values, isNotIn);
+// _error:
+//     // Handle error
+//     return nullptr;
+// }

@@ -74,6 +74,7 @@ class Parser
     MeanStmt *parseMean();
     SqrtNStmt *parseSqrtN();
     AST *parseValue();
+    Logic *parseNewForm();
 
 public:
     // initializes all members and retrieves the first token
