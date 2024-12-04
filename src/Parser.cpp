@@ -283,7 +283,7 @@ Program *Parser::parseProgram()
         }
         default:
         {
-            error();
+            
 
             goto _error;
             break;
@@ -727,7 +727,7 @@ AST *Parser::parseConst()
             break;
         }
         default: {
-            error();
+          
             goto _error;
             break;
         }
@@ -1137,8 +1137,7 @@ Expr *Parser::parseExpr()
             Op = BinaryOp::Minus;
         else
         {
-            error();
-
+            
             goto _error;
         }
         advance();
@@ -1175,7 +1174,7 @@ Expr *Parser::parseTerm()
             Op = BinaryOp::Mod;
         else
         {
-            error();
+            
 
             goto _error;
         }
@@ -1209,7 +1208,7 @@ Expr *Parser::parseFactor()
             Op = BinaryOp::Exp;
         else
         {
-            error();
+            
             goto _error;
         }
         advance();
@@ -1307,7 +1306,7 @@ Expr *Parser::parseFinal()
     }
     default:
     {
-        error();
+     
         goto _error;
     }
     }
@@ -1424,7 +1423,7 @@ Logic *Parser::parseLogic()
             Op = LogicalExpr::Xor;
         else
         {
-            error();
+       
             goto _error;
         }
         advance();
@@ -2393,7 +2392,7 @@ llvm::SmallVector<AST *> Parser::getCaseBody()
         }
         default:
         {
-            error();
+        
 
             goto _error;
             break;
@@ -2632,7 +2631,7 @@ llvm::SmallVector<AST *> Parser::getBody()
         }
         default:
         {
-            error();
+        
 
             goto _error;
             break;
@@ -2729,36 +2728,3 @@ TypeKind Parser::inferType(AST *Value)
     return TypeKind::Unknown;
 }
 
-// Logic *Parser::parseNewForm()
-// {
-//     llvm::StringRef IdentName = Tok.getText();
-//     llvm::SmallVector<Expr *> values;
-//     advance();
-//     bool isNotIn = false;
-//     if (Tok.is(Token::KW_not))
-//     {
-//         isNotIn = true;
-//         advance();
-//     }
-//     if (expect(Token::KW_in))
-//         goto _error;
-//     advance();
-//     if (expect(Token::l_bracket))
-//         goto _error;
-//     advance();
-    
-//     do
-//     {
-//         if (expect(Token::number))
-//             goto _error;
-//         values.push_back(Tok.getText());
-//         advance();
-//     } while (Tok.is(Token::comma) && advance());
-//     if (expect(Token::r_bracket))
-//         goto _error;
-//     advance();
-//     return new InExpr(IdentName, values, isNotIn);
-// _error:
-//     // Handle error
-//     return nullptr;
-// }
