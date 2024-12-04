@@ -1260,6 +1260,59 @@ Expr *Parser::parseFinal()
     case Token::ident:
     {
         Res = new Final(Final::Ident, Tok.getText());
+        Token prev_tok = Tok;
+        const char* prev_buffer = Lex.getBuffer();
+        Expr* u = parseUnary();
+        if(u)
+            return u;
+        else{
+            Tok = prev_tok;
+            Lex.setBufferPtr(prev_buffer);
+            advance();
+        }
+        break;
+    }
+
+    case Token::plus:{
+        advance();
+        if(Tok.getKind() == Token::number || Tok.getKind() == Token::floatNumber){
+            Res = new SignedNumber(SignedNumber::Plus, Tok.getText());
+            advance();
+            break;
+        }
+        goto _error;
+    }
+    case Token::minus:{
+        advance();
+        if (Tok.getKind() == Token::number || Tok.getKind() == Token::floatNumber){
+            Res = new SignedNumber(SignedNumber::Minus, Tok.getText());
+            advance();
+            break;
+        }
+        goto _error;
+    }
+    case Token::minus_paren:{
+        advance();
+        Expr *math_expr = parseExpr();
+        if(math_expr == nullptr)
+            goto _error;
+        Res = new NegExpr(math_expr);
+        if (!consume(Token::r_paren))
+            break;
+        
+        goto _error;
+
+    }
+    case Token::l_paren:
+    {
+        advance();
+        Res = parseExpr();
+        if (Res == nullptr)
+        {
+            goto _error;
+        }
+        if (expect(Token::r_paren))
+            goto _error;
         advance();
         break;
     }
@@ -1304,19 +1357,7 @@ Expr *Parser::parseFinal()
         Res = new CastExpr(CastType, Inner);
         break;
     }
-    case Token::l_paren:
-    {
-        advance();
-        Res = parseExpr();
-        if (Res == nullptr)
-        {
-            goto _error;
-        }
-        if (expect(Token::r_paren))
-            goto _error;
-        advance();
-        break;
-    }
+    
     default:
     {
         error();
