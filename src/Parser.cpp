@@ -33,7 +33,7 @@ Program *Parser::parseProgram()
         case Token::KW_int:
         {
             DeclarationInt *d;
-            d = parseIntDec();
+            d = parseIntDec(false);
             if (d)
                 data.push_back(d);
             else
@@ -44,7 +44,7 @@ Program *Parser::parseProgram()
         case Token::KW_bool:
         {
             DeclarationBool *dbool;
-            dbool = parseBoolDec();
+            dbool = parseBoolDec(false);
             if (dbool)
                 data.push_back(dbool);
             else
@@ -55,7 +55,7 @@ Program *Parser::parseProgram()
         case Token::KW_float:
         {
             DeclarationFloat *dfloat;
-            dfloat = parseFloatDec();
+            dfloat = parseFloatDec(false);
             if (dfloat)
                 data.push_back(dfloat);
             else
@@ -65,7 +65,7 @@ Program *Parser::parseProgram()
         case Token::KW_var:
         {
             DeclarationVar *dvar;
-            dvar = parseVarDec();
+            dvar = parseVarDec(false);
             if (dvar)
                 data.push_back(dvar);
             else
@@ -93,7 +93,7 @@ Program *Parser::parseProgram()
 
             // 2. Attempt to parse a ternary assignment
             TernaryAssignment *t_assign = parseTernaryAssign();
-            if (t_assign && Tok.is(Token::semicolon))
+            if (t_assign)
             {
                 data.push_back(t_assign);
                 break;
@@ -269,7 +269,18 @@ Program *Parser::parseProgram()
             }
             break;
         }
+        case Token::KW_const:{
+            AST *c;
+            c = parseConst();
+            if (c)
+                data.push_back(c);
+            else
+            {
+                goto _error;
+            }
+            break;
 
+        }
         default:
         {
             error();
@@ -288,7 +299,7 @@ _error:
     return nullptr;
 }
 
-DeclarationInt *Parser::parseIntDec()
+DeclarationInt *Parser::parseIntDec(bool isConst)
 {
     Expr *E = nullptr;
     llvm::SmallVector<llvm::StringRef> Vars;
@@ -373,7 +384,7 @@ DeclarationInt *Parser::parseIntDec()
         goto _error;
     }
 
-    return new DeclarationInt(Vars, Values);
+    return new DeclarationInt(Vars, Values, isConst);
 
 _error:
     while (Tok.getKind() != Token::eoi)
@@ -381,7 +392,7 @@ _error:
     return nullptr;
 }
 
-DeclarationBool *Parser::parseBoolDec()
+DeclarationBool *Parser::parseBoolDec(bool isConst)
 {
     Logic *L = nullptr;
     llvm::SmallVector<llvm::StringRef> Vars;
@@ -466,7 +477,7 @@ DeclarationBool *Parser::parseBoolDec()
         goto _error;
     }
 
-    return new DeclarationBool(Vars, Values);
+    return new DeclarationBool(Vars, Values,isConst);
 
 _error:
     while (Tok.getKind() != Token::eoi)
@@ -475,7 +486,7 @@ _error:
 }
 
 // new:
-DeclarationFloat *Parser::parseFloatDec()
+DeclarationFloat *Parser::parseFloatDec(bool isConst)
 {
     Expr *E = nullptr;
     llvm::SmallVector<llvm::StringRef> Vars;
@@ -560,7 +571,7 @@ DeclarationFloat *Parser::parseFloatDec()
         goto _error;
     }
 
-    return new DeclarationFloat(Vars, Values);
+    return new DeclarationFloat(Vars, Values, isConst);
 
 _error:
     while (Tok.getKind() != Token::eoi)
@@ -569,12 +580,12 @@ _error:
 }
 
 // new:
-DeclarationVar *Parser::parseVarDec()
+DeclarationVar *Parser::parseVarDec(bool isConst)
 {
     llvm::SmallVector<llvm::StringRef> Vars;
     llvm::SmallVector<AST *> Values;
     llvm::SmallVector<TypeKind> Types;
-
+    
     // Ensure the current token is 'var'
     if (expect(Token::KW_var))
     {
@@ -665,13 +676,69 @@ DeclarationVar *Parser::parseVarDec()
         goto _error;
     }
 
-    return new DeclarationVar(Vars, Values, Types);
+    return new DeclarationVar(Vars, Values, Types,isConst);
 
 _error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
 }
+
+AST *Parser::parseConst() 
+{
+    // Ensure the current token is 'const'
+    if (expect(Token::KW_const)) {
+        goto _error;
+    }
+    advance();
+
+    // Switch based on the next token
+    switch (Tok.getKind()) {
+        case Token::KW_int: {
+            DeclarationInt *d = parseIntDec(true);
+            if (d)
+                return d;
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_float: {
+            DeclarationFloat *d = parseFloatDec(true);
+            if (d)
+                return d;
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_bool: {
+            DeclarationBool *d = parseBoolDec(true);
+            if (d)
+                return d;
+            else
+                goto _error;
+            break;
+        }
+        case Token::KW_var: {
+            DeclarationVar *d = parseVarDec(true);
+            if (d)
+                return d;
+            else
+                goto _error;
+            break;
+        }
+        default: {
+            error();
+            goto _error;
+            break;
+        }
+    }
+
+_error:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
+
 
 // new:
 DeclareDefine *Parser::parseDefineDec()
@@ -707,7 +774,7 @@ DeclareDefine *Parser::parseDefineDec()
         goto _error;
     }
 
-    // Expect a semicolon at the end (optional depending on syntax)
+    
     return new DeclareDefine(Name, Value);
 
 _error:
@@ -1775,11 +1842,7 @@ DoWhileStmt *Parser::parseDoWhile()
     }
     advance();
 
-    if (expect(Token::semicolon))
-    {
-        goto _error;
-    }
-
+    
     return new DoWhileStmt(Cond, Body);
 
 _error:
@@ -2665,3 +2728,37 @@ TypeKind Parser::inferType(AST *Value)
     // If unable to infer type
     return TypeKind::Unknown;
 }
+
+// Logic *Parser::parseNewForm()
+// {
+//     llvm::StringRef IdentName = Tok.getText();
+//     llvm::SmallVector<Expr *> values;
+//     advance();
+//     bool isNotIn = false;
+//     if (Tok.is(Token::KW_not))
+//     {
+//         isNotIn = true;
+//         advance();
+//     }
+//     if (expect(Token::KW_in))
+//         goto _error;
+//     advance();
+//     if (expect(Token::l_bracket))
+//         goto _error;
+//     advance();
+    
+//     do
+//     {
+//         if (expect(Token::number))
+//             goto _error;
+//         values.push_back(Tok.getText());
+//         advance();
+//     } while (Tok.is(Token::comma) && advance());
+//     if (expect(Token::r_bracket))
+//         goto _error;
+//     advance();
+//     return new InExpr(IdentName, values, isNotIn);
+// _error:
+//     // Handle error
+//     return nullptr;
+// }
