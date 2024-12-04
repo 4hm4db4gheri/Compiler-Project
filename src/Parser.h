@@ -43,8 +43,8 @@ class Parser
     }
 
     Program *parseProgram();
-    DeclarationInt *parseIntDec();
-    DeclarationBool *parseBoolDec();
+    DeclarationInt *parseIntDec(bool isConst);
+    DeclarationBool *parseBoolDec(bool isConst);
     Assignment *parseBoolAssign();
     Assignment *parseIntAssign();
     UnaryOp *parseUnary();
@@ -61,8 +61,8 @@ class Parser
     llvm::SmallVector<AST *> getBody();
     llvm::SmallVector<AST *> getCaseBody();
 
-    DeclarationFloat *parseFloatDec();
-    DeclarationVar *parseVarDec();
+    DeclarationFloat *parseFloatDec(bool isConst);
+    DeclarationVar *parseVarDec(bool isConst);
     DeclareDefine *parseDefineDec();
     Assignment *parseFloatAssign();
     Assignment *parseVarAssign();
@@ -75,6 +75,7 @@ class Parser
     SqrtNStmt *parseSqrtN();
     AST *parseValue();
     Logic *parseNewForm();
+    AST *parseConst();
 
 public:
     // initializes all members and retrieves the first token

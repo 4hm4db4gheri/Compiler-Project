@@ -134,10 +134,11 @@ class DeclarationInt : public Program
   using ValueVector = llvm::SmallVector<Expr *>;
   VarVector Vars;                           // Stores the list of variables
   ValueVector Values;                       // Stores the list of initializers
+   bool isConst;
 
 public:
   // Declaration(llvm::SmallVector<llvm::StringRef> Vars, Expr *E) : Vars(Vars), E(E) {}
-  DeclarationInt(llvm::SmallVector<llvm::StringRef> Vars, llvm::SmallVector<Expr *> Values) : Vars(Vars), Values(Values) {}
+  DeclarationInt(llvm::SmallVector<llvm::StringRef> Vars, llvm::SmallVector<Expr *> Values, bool isConst) : Vars(Vars), Values(Values), isConst(isConst) {}
 
   VarVector::const_iterator varBegin() { return Vars.begin(); }
 
@@ -160,10 +161,11 @@ class DeclarationBool : public Program
   using ValueVector = llvm::SmallVector<Logic *>;
   VarVector Vars;                           // Stores the list of variables
   ValueVector Values;                       // Stores the list of initializers
+  bool isConst;
 
 public:
   // Declaration(llvm::SmallVector<llvm::StringRef> Vars, Expr *E) : Vars(Vars), E(E) {}
-  DeclarationBool(llvm::SmallVector<llvm::StringRef> Vars, llvm::SmallVector<Logic *> Values) : Vars(Vars), Values(Values) {}
+  DeclarationBool(llvm::SmallVector<llvm::StringRef> Vars, llvm::SmallVector<Logic *> Values, bool isConst) : Vars(Vars), Values(Values), isConst(isConst){}
 
   VarVector::const_iterator varBegin() { return Vars.begin(); }
 
@@ -187,9 +189,10 @@ class DeclarationFloat : public Program
     using ValueVector = llvm::SmallVector<Expr *>;
     VarVector Vars;                           // Stores the list of variables
     ValueVector Values;                       // Stores the list of initializers
+     bool isConst;
 
 public:
-    DeclarationFloat(VarVector Vars, ValueVector Values) : Vars(Vars), Values(Values) {}
+    DeclarationFloat(VarVector Vars, ValueVector Values, bool isConst) : Vars(Vars), Values(Values), isConst(isConst){}
 
     VarVector::const_iterator varBegin() { return Vars.begin(); }
     VarVector::const_iterator varEnd() { return Vars.end(); }
@@ -211,10 +214,11 @@ class DeclarationVar : public Program
     VarVector Vars;
     ValueVector Values;
     TypeVector Types;
+    bool isConst;
 
 public:
-    DeclarationVar(VarVector Vars, ValueVector Values, TypeVector Types)
-        : Vars(Vars), Values(Values), Types(Types) {}
+    DeclarationVar(VarVector Vars, ValueVector Values, TypeVector Types, bool isConst)
+        : Vars(Vars), Values(Values), Types(Types) , isConst(isConst) {}
 
     VarVector::const_iterator varBegin() const { return Vars.begin(); }
     VarVector::const_iterator varEnd() const { return Vars.end(); }
