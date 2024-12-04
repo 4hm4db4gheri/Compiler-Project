@@ -8,8 +8,6 @@ Program *Parser::parse()
     return Res;
 }
 
-
-
 Program *Parser::parseProgram()
 {
     llvm::SmallVector<AST *> data;
@@ -269,7 +267,8 @@ Program *Parser::parseProgram()
             }
             break;
         }
-        case Token::KW_const:{
+        case Token::KW_const:
+        {
             AST *c;
             c = parseConst();
             if (c)
@@ -279,11 +278,10 @@ Program *Parser::parseProgram()
                 goto _error;
             }
             break;
-
         }
         default:
         {
-            
+            error();
 
             goto _error;
             break;
@@ -477,7 +475,7 @@ DeclarationBool *Parser::parseBoolDec(bool isConst)
         goto _error;
     }
 
-    return new DeclarationBool(Vars, Values,isConst);
+    return new DeclarationBool(Vars, Values, isConst);
 
 _error:
     while (Tok.getKind() != Token::eoi)
@@ -585,7 +583,7 @@ DeclarationVar *Parser::parseVarDec(bool isConst)
     llvm::SmallVector<llvm::StringRef> Vars;
     llvm::SmallVector<AST *> Values;
     llvm::SmallVector<TypeKind> Types;
-    
+
     // Ensure the current token is 'var'
     if (expect(Token::KW_var))
     {
@@ -676,7 +674,7 @@ DeclarationVar *Parser::parseVarDec(bool isConst)
         goto _error;
     }
 
-    return new DeclarationVar(Vars, Values, Types,isConst);
+    return new DeclarationVar(Vars, Values, Types, isConst);
 
 _error:
     while (Tok.getKind() != Token::eoi)
@@ -684,53 +682,60 @@ _error:
     return nullptr;
 }
 
-AST *Parser::parseConst() 
+AST *Parser::parseConst()
 {
     // Ensure the current token is 'const'
-    if (expect(Token::KW_const)) {
+    if (expect(Token::KW_const))
+    {
         goto _error;
     }
     advance();
 
     // Switch based on the next token
-    switch (Tok.getKind()) {
-        case Token::KW_int: {
-            DeclarationInt *d = parseIntDec(true);
-            if (d)
-                return d;
-            else
-                goto _error;
-            break;
-        }
-        case Token::KW_float: {
-            DeclarationFloat *d = parseFloatDec(true);
-            if (d)
-                return d;
-            else
-                goto _error;
-            break;
-        }
-        case Token::KW_bool: {
-            DeclarationBool *d = parseBoolDec(true);
-            if (d)
-                return d;
-            else
-                goto _error;
-            break;
-        }
-        case Token::KW_var: {
-            DeclarationVar *d = parseVarDec(true);
-            if (d)
-                return d;
-            else
-                goto _error;
-            break;
-        }
-        default: {
-          
+    switch (Tok.getKind())
+    {
+    case Token::KW_int:
+    {
+        DeclarationInt *d = parseIntDec(true);
+        if (d)
+            return d;
+        else
             goto _error;
-            break;
-        }
+        break;
+    }
+    case Token::KW_float:
+    {
+        DeclarationFloat *d = parseFloatDec(true);
+        if (d)
+            return d;
+        else
+            goto _error;
+        break;
+    }
+    case Token::KW_bool:
+    {
+        DeclarationBool *d = parseBoolDec(true);
+        if (d)
+            return d;
+        else
+            goto _error;
+        break;
+    }
+    case Token::KW_var:
+    {
+        DeclarationVar *d = parseVarDec(true);
+        if (d)
+            return d;
+        else
+            goto _error;
+        break;
+    }
+    default:
+    {
+        error();
+        goto _error;
+        break;
+    }
     }
 
 _error:
@@ -738,7 +743,6 @@ _error:
         advance();
     return nullptr;
 }
-
 
 // new:
 DeclareDefine *Parser::parseDefineDec()
@@ -762,19 +766,27 @@ DeclareDefine *Parser::parseDefineDec()
     advance();
 
     // Parse the value
-    if (!expect(Token::number)){
+    if (!expect(Token::number))
+    {
         Value = new Final(Final::Number, Tok.getText());
-    }else if ((!expect(Token::floatNumber))){
+    }
+    else if ((!expect(Token::floatNumber)))
+    {
         Value = new Final(Final::FloatNumber, Tok.getText());
-    }else if ((!expect(Token::KW_true)) || (!expect(Token::KW_false))){
-        Value = new Final(Final::Bool , Tok.getText());
-    }else if ((!expect(Token::ident))){
+    }
+    else if ((!expect(Token::KW_true)) || (!expect(Token::KW_false)))
+    {
+        Value = new Final(Final::Bool, Tok.getText());
+    }
+    else if ((!expect(Token::ident)))
+    {
         Value = new Final(Final::Ident, Tok.getText());
-    }else{
+    }
+    else
+    {
         goto _error;
     }
 
-    
     return new DeclareDefine(Name, Value);
 
 _error:
@@ -1137,7 +1149,8 @@ Expr *Parser::parseExpr()
             Op = BinaryOp::Minus;
         else
         {
-            
+            error();
+
             goto _error;
         }
         advance();
@@ -1174,7 +1187,7 @@ Expr *Parser::parseTerm()
             Op = BinaryOp::Mod;
         else
         {
-            
+            error();
 
             goto _error;
         }
@@ -1208,7 +1221,7 @@ Expr *Parser::parseFactor()
             Op = BinaryOp::Exp;
         else
         {
-            
+            error();
             goto _error;
         }
         advance();
@@ -1306,7 +1319,7 @@ Expr *Parser::parseFinal()
     }
     default:
     {
-     
+        error();
         goto _error;
     }
     }
@@ -1325,6 +1338,7 @@ Logic *Parser::parseComparison()
     Expr *Left = nullptr;
     Expr *Right = nullptr;
     Token prev_Tok;
+    Logic *temp = nullptr;
     const char *prev_buffer;
     if (Tok.is(Token::l_paren))
     {
@@ -1374,6 +1388,103 @@ Logic *Parser::parseComparison()
             Op = Comparison::Greater_equal;
         else if (Tok.is(Token::lte))
             Op = Comparison::Less_equal;
+        else if (Tok.is(Token::KW_in))
+        {
+            advance();
+
+            if (expect(Token::l_bracket))
+            {
+                goto _error;
+            }
+
+            advance();
+
+            Right = parseExpr();
+
+            if (Right == nullptr)
+            {
+                goto _error;
+            }
+
+            Res = new Comparison(Left, Right, Comparison::Equal);
+
+            while (!expect(Token::comma))
+            {
+                advance();
+
+                Right = parseExpr();
+
+                if (Right == nullptr)
+                {
+                    goto _error;
+                }
+
+                temp = new Comparison(Left, Right, Comparison::Equal);
+
+                Res = new LogicalExpr(Res, temp, LogicalExpr::Or);
+            }
+
+            if (expect(Token::r_bracket))
+            {
+                goto _error;
+            }
+
+            advance();
+
+            return Res;
+        }
+        else if (Tok.is(Token::KW_not))
+        {
+            advance();
+
+            if (expect(Token::KW_in))
+            {
+                goto _error;
+            }
+
+            advance();
+
+            if (expect(Token::l_bracket))
+            {
+                goto _error;
+            }
+
+            advance();
+
+            Right = parseExpr();
+
+            if (Right == nullptr)
+            {
+                goto _error;
+            }
+
+            Res = new Comparison(Left, Right, Comparison::Not_equal);
+
+            while (Tok.is(Token::comma))
+            {
+                advance();
+
+                Right = parseExpr();
+
+                if (Right == nullptr)
+                {
+                    goto _error;
+                }
+
+                temp = new Comparison(Left, Right, Comparison::Not_equal);
+
+                Res = new LogicalExpr(Res, temp, LogicalExpr::And);
+            }
+
+            if (expect(Token::r_bracket))
+            {
+                goto _error;
+            }
+
+            advance();
+
+            return Res;
+        }
         else
         {
             if (Ident)
@@ -1396,6 +1507,8 @@ Logic *Parser::parseComparison()
         Res = new Comparison(Left, Right, Op);
     }
 
+    // if (x in [1,2,3])
+
     return Res;
 
 _error:
@@ -1410,7 +1523,8 @@ Logic *Parser::parseLogic()
     Logic *Right;
     if (Left == nullptr)
     {
-        goto _error;
+            // TODO: might be a problem
+            goto _error;
     }
     while (Tok.isOneOf(Token::KW_and, Token::KW_or, Token::KW_xor))
     {
@@ -1423,7 +1537,7 @@ Logic *Parser::parseLogic()
             Op = LogicalExpr::Xor;
         else
         {
-       
+            error();
             goto _error;
         }
         advance();
@@ -1612,18 +1726,26 @@ PrintStmt *Parser::parsePrint()
     // }
     // Var = Tok.getText();
 
-    if (!expect(Token::number)){
+    if (!expect(Token::number))
+    {
         Value = new Final(Final::Number, Tok.getText());
-    }else if ((!expect(Token::floatNumber))){
+    }
+    else if ((!expect(Token::floatNumber)))
+    {
         Value = new Final(Final::FloatNumber, Tok.getText());
-    }else if ((!expect(Token::KW_true)) || (!expect(Token::KW_false))){
-        Value = new Final(Final::Bool , Tok.getText());
-    }else if ((!expect(Token::ident))){
+    }
+    else if ((!expect(Token::KW_true)) || (!expect(Token::KW_false)))
+    {
+        Value = new Final(Final::Bool, Tok.getText());
+    }
+    else if ((!expect(Token::ident)))
+    {
         Value = new Final(Final::Ident, Tok.getText());
-    }else{
+    }
+    else
+    {
         goto _error;
     }
-
 
     advance();
     if (expect(Token::r_paren))
@@ -1841,7 +1963,6 @@ DoWhileStmt *Parser::parseDoWhile()
     }
     advance();
 
-    
     return new DoWhileStmt(Cond, Body);
 
 _error:
@@ -2386,13 +2507,13 @@ llvm::SmallVector<AST *> Parser::getCaseBody()
             {
                 goto _error;
             }
-            BreakStmt* breaks;
+            BreakStmt *breaks;
             body.push_back(breaks);
             break;
         }
         default:
         {
-        
+            error();
 
             goto _error;
             break;
@@ -2625,13 +2746,13 @@ llvm::SmallVector<AST *> Parser::getBody()
             {
                 goto _error;
             }
-            BreakStmt* breaks;
+            BreakStmt *breaks;
             body.push_back(breaks);
             break;
         }
         default:
         {
-        
+            error();
 
             goto _error;
             break;
@@ -2728,3 +2849,36 @@ TypeKind Parser::inferType(AST *Value)
     return TypeKind::Unknown;
 }
 
+// Logic *Parser::parseNewForm()
+// {
+//     llvm::StringRef IdentName = Tok.getText();
+//     llvm::SmallVector<Expr *> values;
+//     advance();
+//     bool isNotIn = false;
+//     if (Tok.is(Token::KW_not))
+//     {
+//         isNotIn = true;
+//         advance();
+//     }
+//     if (expect(Token::KW_in))
+//         goto _error;
+//     advance();
+//     if (expect(Token::l_bracket))
+//         goto _error;
+//     advance();
+
+//     do
+//     {
+//         if (expect(Token::number))
+//             goto _error;
+//         values.push_back(Tok.getText());
+//         advance();
+//     } while (Tok.is(Token::comma) && advance());
+//     if (expect(Token::r_bracket))
+//         goto _error;
+//     advance();
+//     return new InExpr(IdentName, values, isNotIn);
+// _error:
+//     // Handle error
+//     return nullptr;
+// }
