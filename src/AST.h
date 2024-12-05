@@ -5,13 +5,16 @@
 #include "llvm/ADT/StringRef.h"
 #include "TypeKind.h"
 
-
 // Forward declarations of classes used in the AST
 class AST;
 class Expr;
 class Program;
 class DeclarationInt;
 class DeclarationBool;
+class DeclarationFloat;
+class DeclarationVar;
+class DeclareDefine;
+class TernaryAssignment;
 class Final;
 class BinaryOp;
 class UnaryOp;
@@ -22,20 +25,15 @@ class Logic;
 class Comparison;
 class LogicalExpr;
 class IfStmt;
-class WhileStmt;
 class elifStmt;
+class WhileStmt;
 class ForStmt;
-class PrintStmt;
-
-class CastExpr;
-class DeclarationFloat;
-class DeclarationVar;
-class DeclareDefine;
-class TernaryAssignment;
 class DoWhileStmt;
 class SwitchStmt;
 class CaseStmt;
 class DefaultStmt;
+class PrintStmt;
+class CastExpr;
 class MinStmt;
 class MaxStmt;
 class MeanStmt;
@@ -43,46 +41,46 @@ class SqrtNStmt;
 class BreakStmt;
 
 // ASTVisitor class defines a visitor pattern to traverse the AST
-class ASTVisitor
-{
+class ASTVisitor {
 public:
-  // Virtual visit functions for each AST node type
-  virtual void visit(AST &) {}               // Visit the base AST node
-  virtual void visit(Expr &) {}              // Visit the expression node
-  virtual void visit(Logic &) {}             // Visit the Logic node
-  virtual void visit(Program &) {};          // Visit the group of expressions node
-  virtual void visit(Final &) = 0;           // Visit the Final node
-  virtual void visit(BinaryOp &) = 0;        // Visit the binary operation node
-  virtual void visit(UnaryOp &) = 0;
-  virtual void visit(SignedNumber &) = 0;
-  virtual void visit(NegExpr &) = 0;
-  virtual void visit(Assignment &) = 0;      // Visit the assignment expression node
-  virtual void visit(DeclarationInt &) = 0;     // Visit the variable declaration node
-  virtual void visit(DeclarationBool &) = 0;     // Visit the variable declaration node
-  virtual void visit(Comparison &) = 0;      // Visit the Comparison node
-  virtual void visit(LogicalExpr &) = 0;     // Visit the LogicalExpr node
-  virtual void visit(IfStmt &) = 0;          // Visit the IfStmt node
-  virtual void visit(WhileStmt &) = 0;        // Visit the IterStmt node
-  virtual void visit(elifStmt &) = 0;        // Visit the elifStmt node
-  virtual void visit(ForStmt &) = 0;
-  virtual void visit(PrintStmt &) = 0;
-  virtual void visit(CastExpr &) = 0;
+    // Virtual visit functions for each AST node type
+    virtual void visit(AST &) {}               // Visit the base AST node
+    virtual void visit(Expr &) {}              // Visit the expression node
+    virtual void visit(Logic &) {}             // Visit the Logic node
+    virtual void visit(Program &) {}           // Visit the group of expressions node
 
+    // Pure virtual functions (must be implemented by derived classes)
+    virtual void visit(Final &) = 0;
+    virtual void visit(BinaryOp &) = 0;
+    virtual void visit(UnaryOp &) = 0;
+    virtual void visit(SignedNumber &) = 0;
+    virtual void visit(NegExpr &) = 0;
+    virtual void visit(Assignment &) = 0;
+    virtual void visit(DeclarationInt &) = 0;
+    virtual void visit(DeclarationBool &) = 0;
     virtual void visit(DeclarationFloat &) = 0;
     virtual void visit(DeclarationVar &) = 0;
     virtual void visit(DeclareDefine &) = 0;
     virtual void visit(TernaryAssignment &) = 0;
+    virtual void visit(Comparison &) = 0;
+    virtual void visit(LogicalExpr &) = 0;
+    virtual void visit(IfStmt &) = 0;
+    virtual void visit(WhileStmt &) = 0;
     virtual void visit(DoWhileStmt &) = 0;
+    virtual void visit(elifStmt &) = 0;
+    virtual void visit(ForStmt &) = 0;
     virtual void visit(SwitchStmt &) = 0;
     virtual void visit(CaseStmt &) = 0;
     virtual void visit(DefaultStmt &) = 0;
+    virtual void visit(PrintStmt &) = 0;
+    virtual void visit(CastExpr &) = 0;
     virtual void visit(MinStmt &) = 0;
     virtual void visit(MaxStmt &) = 0;
     virtual void visit(MeanStmt &) = 0;
     virtual void visit(SqrtNStmt &) = 0;
+    virtual void visit(BreakStmt &) = 0;
 };
 
-// AST class serves as the base class for all AST nodes
 class AST
 {
 public:
@@ -90,7 +88,6 @@ public:
   virtual void accept(ASTVisitor &V) = 0;    // Accept a visitor for traversal
 };
 
-// Expr class represents an expression in the AST
 class Expr : public AST
 {
 public:
@@ -103,7 +100,6 @@ public:
   Logic() {}
 };
 
-// Program class represents a group of expressions in the AST
 class Program : public AST
 {
   using dataVector = llvm::SmallVector<AST *>;
@@ -127,7 +123,6 @@ public:
   }
 };
 
-// Declaration class represents a variable declaration with an initializer in the AST
 class DeclarationInt : public Program
 {
   using VarVector = llvm::SmallVector<llvm::StringRef>;
@@ -148,13 +143,14 @@ public:
 
   ValueVector::const_iterator valEnd() { return Values.end(); }
 
+  const ValueVector &getValue() const {return Values;}
+
   virtual void accept(ASTVisitor &V) override
   {
     V.visit(*this);
   }
 };
 
-// Declaration class represents a variable declaration with an initializer in the AST
 class DeclarationBool : public Program
 {
   using VarVector = llvm::SmallVector<llvm::StringRef>;
@@ -181,8 +177,6 @@ public:
   }
 };
 
-//new:
-// DeclarationFloat class represents a float variable declaration in the AST
 class DeclarationFloat : public Program
 {
     using VarVector = llvm::SmallVector<llvm::StringRef>;
@@ -205,7 +199,6 @@ public:
     }
 };
 
-//new:
 class DeclarationVar : public Program
 {
     using VarVector = llvm::SmallVector<llvm::StringRef>;
@@ -233,8 +226,6 @@ public:
     }
 };
 
-//new:
-// DeclareDefine class represents a #define directive in the AST
 class DeclareDefine : public Program
 {
 private:
@@ -253,8 +244,6 @@ public:
     }
 };
 
-//new:
-// TernaryAssignment class represents a ternary assignment in the AST
 class TernaryAssignment : public Program
 {
 private:
@@ -278,16 +267,13 @@ public:
     }
 };
 
-
-class Final : public Expr
-{
+class Final : public Expr {
 public:
-    enum ValueKind
-    {
+    enum ValueKind {
         Ident,
         Number,
-        FloatNumber,  // Represents float literals
-        Bool 
+        FloatNumber,
+        Bool
     };
 
 private:
@@ -300,15 +286,11 @@ public:
     ValueKind getKind() const { return Kind; }
     llvm::StringRef getVal() const { return Val; }
 
-    virtual void accept(ASTVisitor &V) override
-    {
+    virtual void accept(ASTVisitor &V) override {
         V.visit(*this);
     }
 };
 
-
-
-// BinaryOp class represents a binary operation in the AST (plus, minus, multiplication, division)
 class BinaryOp : public Expr
 {
 public:
@@ -342,7 +324,6 @@ public:
   }
 };
 
-// naryOp class represents a unary operation in the AST (plus plus, minus minus)
 class UnaryOp : public Expr
 {
 public:
@@ -412,9 +393,8 @@ public:
   }
 };
 
-// AST.h
 
-class Assignment : public Program {
+class Assignment : public AST {
 public:
     enum AssignKind {
         Assign,
@@ -427,16 +407,23 @@ public:
 
 private:
     Final *Variable;   // The variable being assigned to
-    AST *Value;        // The value being assigned (Expr* or Logic*)
+    Expr *RightExpr;   // The right-hand side expression (if any)
+    Logic *RightLogic; // The right-hand side logic expression (if any)
     AssignKind OpKind; // The kind of assignment operator
 
 public:
-    Assignment(Final *Variable, AST *Value, AssignKind OpKind)
-        : Variable(Variable), Value(Value), OpKind(OpKind) {}
+    // Constructor for expression assignment
+    Assignment(Final *Variable, Expr *Value, AssignKind OpKind)
+        : Variable(Variable), RightExpr(Value), RightLogic(nullptr), OpKind(OpKind) {}
 
-    Final *getVariable() { return Variable; }
-    AST *getValue() { return Value; }
-    AssignKind getAssignKind() { return OpKind; }
+    // Constructor for logic assignment
+    Assignment(Final *Variable, Logic *Value, AssignKind OpKind)
+        : Variable(Variable), RightExpr(nullptr), RightLogic(Value), OpKind(OpKind) {}
+
+    Final *getVariable() const { return Variable; }
+    Expr *getRightExpr() const { return RightExpr; }
+    Logic *getRightLogic() const { return RightLogic; }
+    AssignKind getAssignKind() const { return OpKind; }
 
     virtual void accept(ASTVisitor &V) override {
         V.visit(*this);
@@ -444,7 +431,6 @@ public:
 };
 
 
-// Comparison class represents a comparison expression in the AST
 class Comparison : public Logic
 {
   public:
@@ -481,7 +467,6 @@ public:
   }
 };
 
-// LogicalExpr class represents a logical expression in the AST
 class LogicalExpr : public Logic
 {
   public:
@@ -593,8 +578,6 @@ public:
   }
 };
 
-//new:
-// DoWhileStmt class represents a do-while loop in the AST
 class DoWhileStmt : public Program
 {
     using BodyVector = llvm::SmallVector<AST *>;
@@ -607,14 +590,13 @@ public:
     Logic *getCond() { return Cond; }
     BodyVector::const_iterator begin() { return Body.begin(); }
     BodyVector::const_iterator end() { return Body.end(); }
+    BodyVector getBody(){return Body;}
 
     virtual void accept(ASTVisitor &V) override
     {
         V.visit(*this);
     }
 };
-
-
 
 class ForStmt : public Program
 {
@@ -691,67 +673,55 @@ public:
     }
 };
 
-//new:
-// SwitchStmt class represents a switch statement in the AST
-class SwitchStmt : public Program
-{
-    Expr *SwitchExpr;                           // Expression being switched on
-    llvm::SmallVector<CaseStmt *> Cases;        // List of case statements
-    DefaultStmt *DefaultCase;                   // Default case (optional)
+class SwitchStmt : public AST {
+    Expr *SwitchExpr;
+    llvm::SmallVector<CaseStmt *> Cases;
+    DefaultStmt *DefaultCase;
 
 public:
     SwitchStmt(Expr *SwitchExpr, llvm::SmallVector<CaseStmt *> Cases, DefaultStmt *DefaultCase)
         : SwitchExpr(SwitchExpr), Cases(Cases), DefaultCase(DefaultCase) {}
 
     Expr *getSwitchExpr() { return SwitchExpr; }
-    llvm::SmallVector<CaseStmt *>::const_iterator caseBegin() { return Cases.begin(); }
-    llvm::SmallVector<CaseStmt *>::const_iterator caseEnd() { return Cases.end(); }
+    const llvm::SmallVector<CaseStmt *> &getCases() const { return Cases; } // Add this method
     DefaultStmt *getDefaultCase() { return DefaultCase; }
 
-    virtual void accept(ASTVisitor &V) override
-    {
+    virtual void accept(ASTVisitor &V) override {
         V.visit(*this);
     }
 };
 
-// CaseStmt class represents a case within a switch statement in the AST
-class CaseStmt : public Program
-{
-    Expr *CaseExpr;                          // Expression for the case
-    llvm::SmallVector<AST *> Body;           // Statements within the case
+
+class CaseStmt : public AST {
+    Expr *CaseExpr;
+    llvm::SmallVector<AST *> Body;
 
 public:
     CaseStmt(Expr *CaseExpr, llvm::SmallVector<AST *> Body)
         : CaseExpr(CaseExpr), Body(Body) {}
 
     Expr *getCaseExpr() { return CaseExpr; }
-    llvm::SmallVector<AST *>::const_iterator begin() { return Body.begin(); }
-    llvm::SmallVector<AST *>::const_iterator end() { return Body.end(); }
+    const llvm::SmallVector<AST *> &getBody() const { return Body; } // Add this method
 
-    virtual void accept(ASTVisitor &V) override
-    {
+    virtual void accept(ASTVisitor &V) override {
         V.visit(*this);
     }
 };
 
-// DefaultStmt class represents the default case within a switch statement in the AST
-class DefaultStmt : public Program
-{
-    llvm::SmallVector<AST *> Body;           // Statements within the default case
+
+class DefaultStmt : public AST {
+    llvm::SmallVector<AST *> Body;
 
 public:
     DefaultStmt(llvm::SmallVector<AST *> Body) : Body(Body) {}
 
-    llvm::SmallVector<AST *>::const_iterator begin() { return Body.begin(); }
-    llvm::SmallVector<AST *>::const_iterator end() { return Body.end(); }
+    const llvm::SmallVector<AST *> &getBody() const { return Body; } // Add this method
 
-    virtual void accept(ASTVisitor &V) override
-    {
+    virtual void accept(ASTVisitor &V) override {
         V.visit(*this);
     }
 };
 
-// MinStmt class represents a call to the min function in the AST
 class MinStmt : public Expr
 {
     Expr *Left;       // First argument
@@ -769,7 +739,6 @@ public:
     }
 };
 
-// MaxStmt class represents a call to the max function in the AST
 class MaxStmt : public Expr
 {
     Expr *Left;       // First argument
@@ -787,7 +756,6 @@ public:
     }
 };
 
-// MeanStmt class represents a call to the mean function in the AST
 class MeanStmt : public Expr
 {
     Expr *Left;       // First argument
@@ -805,7 +773,6 @@ public:
     }
 };
 
-// SqrtNStmt class represents a call to the sqrtN function in the AST
 class SqrtNStmt : public Expr
 {
     Expr *Base;       // Base value

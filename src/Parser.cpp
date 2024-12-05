@@ -955,7 +955,8 @@ _error:
 // done
 Assignment *Parser::parseVarAssign()
 {
-    AST *Value = nullptr; // Use AST* to accommodate both Expr* and Logic*
+    Expr *Value1 = nullptr; // Use AST* to accommodate both Expr* and Logic*
+    Logic *Value2 = nullptr;
     Final *F = nullptr;
     Assignment::AssignKind AK;
     Token prev_token;
@@ -1005,7 +1006,7 @@ Assignment *Parser::parseVarAssign()
     E = parseExpr();
     if (E)
     {
-        Value = E;
+        Value1 = E;
     }
     else
     {
@@ -1016,7 +1017,7 @@ Assignment *Parser::parseVarAssign()
         Logic *L = parseLogic();
         if (L)
         {
-            Value = L;
+            Value2 = L;
         }
         else
         {
@@ -1024,12 +1025,14 @@ Assignment *Parser::parseVarAssign()
         }
     }
 
-    if (Value)
+    if (Value1)
     {
-        return new Assignment(F, Value, AK);
+        return new Assignment(F, Value1, AK);
     }
-    else
-    {
+    else if(Value2){
+        return new Assignment(F, Value2, AK);
+    }
+    else {
         goto _error;
     }
 

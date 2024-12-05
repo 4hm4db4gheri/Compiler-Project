@@ -1,208 +1,226 @@
 #include "Sema.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/raw_ostream.h"
+#include <unordered_map>
 
-
-namespace nms{
+namespace nms {
 class InputCheck : public ASTVisitor {
-  llvm::StringSet<> IntScope; // StringSet to store declared int variables
-  llvm::StringSet<> BoolScope;
-  bool HasError; // Flag to indicate if an error occurred
+    llvm::StringSet<> IntScope;
+    llvm::StringSet<> BoolScope;
+    llvm::StringSet<> FloatScope;
+    std::unordered_map<std::string, TypeKind> VarScope;
+    llvm::StringSet<> ConstScope;
+    llvm::StringSet<> DefineScope;
+    bool HasError;
 
-  enum ErrorType { Twice, Not }; // Enum to represent error types: Twice - variable declared twice, Not - variable not declared
+    enum ErrorType { Twice, Not };
 
-  void error(ErrorType ET, llvm::StringRef V) {
-    // Function to report errors
-    llvm::errs() << "Variable " << V << " is "
-                 << (ET == Twice ? "already" : "not")
-                 << " declared\n";
-    HasError = true; // Set error flag to true
-  }
+    void error(ErrorType ET, llvm::StringRef V) {
+        llvm::errs() << "Variable '" << V << "' is "
+                     << (ET == Twice ? "already" : "not")
+                     << " declared.\n";
+        HasError = true;
+    }
 
 public:
-  InputCheck() : HasError(false) {} // Constructor
+    InputCheck() : HasError(false) {}
 
-  bool hasError() { return HasError; } // Function to check if an error occurred
+    bool hasError() { return HasError; }
 
-  // Visit function for Program nodes
-  virtual void visit(Program &Node) override { 
-
-    for (llvm::SmallVector<AST *>::const_iterator I = Node.begin(), E = Node.end(); I != E; ++I)
-    {
-      (*I)->accept(*this); // Visit each child node
-    }
-  };
-
-  virtual void visit(AST &Node) override {
-    Node.accept(*this);
-  }
-
-  // Visit function for Final nodes
-  virtual void visit(Final &Node) override {
-    if (Node.getKind() == Final::Ident) {
-      // Check if identifier is in the scope
-      if (IntScope.find(Node.getVal()) == IntScope.end() && BoolScope.find(Node.getVal()) == BoolScope.end())
-        error(Not, Node.getVal());
-    }
-  };
-
-  // Visit function for BinaryOp nodes
-  virtual void visit(BinaryOp &Node) override {
-    Expr* right = Node.getRight();
-    Expr* left = Node.getLeft();
-    if (left)
-      left->accept(*this);
-    else
-      HasError = true;
-
-    if (right)
-      right->accept(*this);
-    else
-      HasError = true;
-
-    Final* l = (Final*)left;
-    if (l->getKind() == Final::Ident){
-      if (BoolScope.find(l->getVal()) != BoolScope.end()) {
-        llvm::errs() << "Cannot use binary operation on a boolean variable: " << l->getVal() << "\n";
-        HasError = true;
-      }
-    }
-
-    Final* r = (Final*)right;
-    if (r->getKind() == Final::Ident){
-      if (BoolScope.find(r->getVal()) != BoolScope.end()) {
-        llvm::errs() << "Cannot use binary operation on a boolean variable: " << r->getVal() << "\n";
-        HasError = true;
-      }
-    }
-    
-
-    if (Node.getOperator() == BinaryOp::Operator::Div || Node.getOperator() == BinaryOp::Operator::Mod ) {
-      Final* f = (Final*)right;
-
-      if (f->getKind() == Final::ValueKind::Number) {
-        llvm::StringRef intval = f->getVal();
-
-        if (intval == "0") {
-          llvm::errs() << "Division by zero is not allowed." << "\n";
-          HasError = true;
+    virtual void visit(Program &Node) override {
+        for (auto *stmt : Node.getdata()) {
+            stmt->accept(*this);
         }
-      }
-    }
-    
-  };
-
-  // Visit function for Assignment nodes
-  virtual void visit(Assignment &Node) override {
-    Final *dest = Node.getLeft();
-    Expr *RightExpr;
-    Logic *RightLogic;
-
-    dest->accept(*this);
-
-    if (dest->getKind() == Final::Number) {
-        llvm::errs() << "Assignment destination must be an identifier, not a number.";
-        HasError = true;
     }
 
-    if (BoolScope.find(dest->getVal()) != BoolScope.end()) {
-      RightLogic = Node.getRightLogic();
-      if (RightLogic){
-        RightLogic->accept(*this);
-        if(Node.getAssignKind() != Assignment::AssignKind::Assign){
-          llvm::errs() << "Cannot use mathematical operation on boolean variable: " << dest->getVal() << "\n";
-          HasError = true;
+    virtual void visit(AST &Node) override {
+        Node.accept(*this);
+    }
+
+    virtual void visit(Final &Node) override {
+        if (Node.getKind() == Final::Ident) {
+            llvm::StringRef varName = Node.getVal();
+            if (IntScope.find(varName) == IntScope.end() &&
+                BoolScope.find(varName) == BoolScope.end() &&
+                FloatScope.find(varName) == FloatScope.end() &&
+                VarScope.find(varName.str()) == VarScope.end() &&
+                ConstScope.find(varName) == ConstScope.end() &&
+                DefineScope.find(varName) == DefineScope.end()) {
+                error(Not, varName);
+            }
         }
-      }
-      else{
-        llvm::errs() << "you should assign a boolean value to boolean variable: " << dest->getVal() << "\n";
-        HasError = true;
-      }
     }
-      
-    else if (IntScope.find(dest->getVal()) != IntScope.end()){
-      RightExpr = Node.getRightExpr();
-      RightLogic = Node.getRightLogic();
-      if (RightExpr){
-        RightExpr->accept(*this);
-      }
-      else if(RightLogic){
-        RightLogic->accept(*this);
-        Comparison* RL = (Comparison*) RightLogic;
-        if (RL){
-          if (RL->getOperator() == Comparison::Ident){
-            Final* F = (Final*)(RL->getLeft());
-            if (IntScope.find(F->getVal()) == IntScope.end()) {
-              llvm::errs() << "you should assign an integer value to an integer variable: " << dest->getVal() << "\n";
-              HasError = true;
-            } 
-          }
-          else{
-            llvm::errs() << "you should assign an integer value to an integer variable: " << dest->getVal() << "\n";
+
+    virtual void visit(BinaryOp &Node) override {
+        Node.getLeft()->accept(*this);
+        Node.getRight()->accept(*this);
+
+        TypeKind leftType = inferType(Node.getLeft());
+        TypeKind rightType = inferType(Node.getRight());
+
+        if (leftType != rightType) {
+            llvm::errs() << "Type mismatch in binary operation.\n";
             HasError = true;
-          }
         }
-        
-      }
-      else{
-        llvm::errs() << "you should assign an integer value to an integer variable: " << dest->getVal() << "\n";
-        HasError = true;
-      }
-        
-    }
-    
-    
-    if (Node.getAssignKind() == Assignment::AssignKind::Slash_assign) {
 
-      Final* f = (Final*)(RightExpr);
-      if (f)
-      {
-        if (f->getKind() == Final::ValueKind::Number) {
-        llvm::StringRef intval = f->getVal();
-
-        if (intval == "0") {
-          llvm::errs() << "Division by zero is not allowed." << "\n";
-          HasError = true;
+        if (leftType == TypeKind::Bool || rightType == TypeKind::Bool) {
+            llvm::errs() << "Cannot perform arithmetic operations on boolean variables.\n";
+            HasError = true;
         }
+
+        // Division by zero check
+        if (Node.getOperator() == BinaryOp::Div || Node.getOperator() == BinaryOp::Mod) {
+            if (auto *rightFinal = dynamic_cast<Final *>(Node.getRight())) {
+                if (rightFinal->getKind() == Final::Number && rightFinal->getVal() == "0") {
+                    llvm::errs() << "Division by zero is not allowed.\n";
+                    HasError = true;
+                }
+            }
         }
-      }
     }
-  };
 
-  virtual void visit(DeclarationInt &Node) override {
-    for (llvm::SmallVector<Expr *>::const_iterator I = Node.valBegin(), E = Node.valEnd(); I != E; ++I){
-      (*I)->accept(*this); // If the Declaration node has an expression, recursively visit the expression node
-    }
-    for (llvm::SmallVector<llvm::StringRef>::const_iterator I = Node.varBegin(), E = Node.varEnd(); I != E;
-         ++I) {
-      if(BoolScope.find(*I) != BoolScope.end()){
-        llvm::errs() << "Variable " << *I << " is already declared as an boolean" << "\n";
-        HasError = true; 
-      }
-      else{
-        if (!IntScope.insert(*I).second)
-          error(Twice, *I); // If the insertion fails (element already exists in Scope), report a "Twice" error
-      }
-    }
-  };
+    virtual void visit(Assignment &Node) override {
+        Final *dest = Node.getVariable();
+        dest->accept(*this);
 
-  virtual void visit(DeclarationBool &Node) override {
-    for (llvm::SmallVector<Logic *>::const_iterator I = Node.valBegin(), E = Node.valEnd(); I != E; ++I){
-      (*I)->accept(*this); // If the Declaration node has an expression, recursively visit the expression node
+        llvm::StringRef varName = dest->getVal();
+
+        if (ConstScope.find(varName) != ConstScope.end() ||
+            DefineScope.find(varName) != DefineScope.end()) {
+            llvm::errs() << "Cannot assign to constant variable: " << varName << "\n";
+            HasError = true;
+            return;
+        }
+
+        TypeKind destType = getVariableType(varName);
+
+        // Infer the type of the right-hand side
+        AST *value = nullptr;
+        if (Node.getRightExpr()) {
+            value = Node.getRightExpr();
+        } else if (Node.getRightLogic()) {
+            value = Node.getRightLogic();
+        } else {
+            llvm::errs() << "Assignment has no right-hand side.\n";
+            HasError = true;
+            return;
+        }
+
+        value->accept(*this);
+        TypeKind valueType = inferType(value);
+
+        // Check for explicit cast
+        bool isCast = dynamic_cast<CastExpr *>(value) != nullptr;
+
+        if (destType != valueType && !isCast) {
+            llvm::errs() << "Type mismatch in assignment to '" << varName << "'.\n";
+            HasError = true;
+        }
     }
-    for (llvm::SmallVector<llvm::StringRef>::const_iterator I = Node.varBegin(), E = Node.varEnd(); I != E;
-         ++I) {
-      if(IntScope.find(*I) != IntScope.end()){
-        llvm::errs() << "Variable " << *I << " is already declared as an integer" << "\n";
-        HasError = true; 
-      }
-      else{
-        if (!BoolScope.insert(*I).second)
-          error(Twice, *I); // If the insertion fails (element already exists in Scope), report a "Twice" error
-      }
+
+    virtual void visit(DeclarationInt &Node) override {
+        for (auto I = Node.varBegin(), E = Node.varEnd(); I != E; ++I) {
+            llvm::StringRef varName = *I;
+            if (BoolScope.find(varName) != BoolScope.end() ||
+                FloatScope.find(varName) != FloatScope.end() ||
+                VarScope.find(varName.str()) != VarScope.end() ||
+                ConstScope.find(varName) != ConstScope.end() ||
+                DefineScope.find(varName) != DefineScope.end()) {
+                llvm::errs() << "Variable '" << varName << "' is already declared.\n";
+                HasError = true;
+            } else {
+                if (!IntScope.insert(varName).second) {
+                    error(Twice, varName);
+                }
+            }
+        }
+
+        for (auto *expr : Node.getValue()) {
+            expr->accept(*this);
+        }
     }
-    
-  };
+
+
+    virtual void visit(DeclarationBool &Node) override {
+    for (auto I = Node.varBegin(), E = Node.varEnd(); I != E; ++I) {
+        llvm::StringRef varName = *I;
+        if (IntScope.find(varName) != IntScope.end() ||
+            FloatScope.find(varName) != FloatScope.end() ||
+            VarScope.find(varName.str()) != VarScope.end() || // Convert to std::string
+            ConstScope.find(varName) != ConstScope.end() ||
+            DefineScope.find(varName) != DefineScope.end()) {
+            llvm::errs() << "Variable " << varName << " is already declared.\n";
+            HasError = true;
+        } else {
+            if (!BoolScope.insert(varName).second) {
+                error(Twice, varName);
+            }
+        }
+    }
+}
+
+    virtual void visit(DeclarationFloat &Node) override {
+    for (auto I = Node.varBegin(), E = Node.varEnd(); I != E; ++I) {
+        llvm::StringRef varName = *I;
+        if (IntScope.find(varName) != IntScope.end() ||
+            BoolScope.find(varName) != BoolScope.end() ||
+            VarScope.find(varName.str()) != VarScope.end() ||
+            ConstScope.find(varName) != ConstScope.end() ||
+            DefineScope.find(varName) != DefineScope.end()) {
+            llvm::errs() << "Variable " << varName << " is already declared.\n";
+            HasError = true;
+        } else {
+            if (!FloatScope.insert(varName).second) {
+                error(Twice, varName);
+            }
+        }
+    }
+}
+
+    virtual void visit(DeclarationVar &Node) override {
+    auto varIt = Node.varBegin();
+    auto valIt = Node.valBegin();
+    auto typeIt = Node.typeBegin();
+    for (; varIt != Node.varEnd(); ++varIt, ++valIt, ++typeIt) {
+        llvm::StringRef varName = *varIt;
+        TypeKind varType = *typeIt;
+        if (IntScope.find(varName) != IntScope.end() ||
+            BoolScope.find(varName) != BoolScope.end() ||
+            FloatScope.find(varName) != FloatScope.end() ||
+            ConstScope.find(varName) != ConstScope.end() ||
+            DefineScope.find(varName) != DefineScope.end()) {
+            llvm::errs() << "Variable " << varName << " is already declared.\n";
+            HasError = true;
+        } else {
+            if (!VarScope.emplace(varName.str(), varType).second) {
+                error(Twice, varName);
+            }
+        }
+        // Visit the value to ensure correctness
+        (*valIt)->accept(*this);
+    }
+}
+
+    virtual void visit(PrintStmt &Node) override {
+        Expr *value = Node.getVar();
+        Final *finalValue = dynamic_cast<Final *>(value);
+        if (!finalValue || finalValue->getKind() != Final::Ident) {
+            llvm::errs() << "Print statement expects an identifier.\n";
+            HasError = true;
+            return;
+        }
+
+        llvm::StringRef varName = finalValue->getVal();
+
+        if (IntScope.find(varName) == IntScope.end() &&
+            BoolScope.find(varName) == BoolScope.end() &&
+            FloatScope.find(varName) == FloatScope.end() &&
+            VarScope.find(varName.str()) == VarScope.end() &&
+            ConstScope.find(varName) == ConstScope.end() &&
+            DefineScope.find(varName) == DefineScope.end()) {
+            error(Not, varName);
+        }
+    }
 
   virtual void visit(Comparison &Node) override {
     if(Node.getLeft()){
@@ -211,16 +229,7 @@ public:
     if(Node.getRight()){
       Node.getRight()->accept(*this);
     }
-    // else{
-    //   if (Node.getOperator() == Comparison::Ident){
-    //     Final* F = (Final*)(Node.getLeft());
-    //     if (BoolScope.find(F->getVal()) == BoolScope.end()) {
-    //       llvm::errs() << "you need a boolean varaible to compare or assign: "<< F->getVal() << "\n";
-    //       HasError = true;
-    //     } 
-    //   }
-    // }
-
+   
     if (Node.getOperator() != Comparison::True && Node.getOperator() != Comparison::False && Node.getOperator() != Comparison::Ident){
       Final* L = (Final*)(Node.getLeft());
       if(L){
@@ -259,13 +268,6 @@ public:
   virtual void visit(NegExpr &Node) override {
     Expr *expr = Node.getExpr();
     (*expr).accept(*this);
-  };
-
-  virtual void visit(PrintStmt &Node) override {
-    // Check if identifier is in the scope
-    if (IntScope.find(Node.getVar()) == IntScope.end() && BoolScope.find(Node.getVar()) == BoolScope.end())
-      error(Not, Node.getVar());
-    
   };
 
   virtual void visit(IfStmt &Node) override {
@@ -325,14 +327,140 @@ public:
   virtual void visit(SignedNumber &Node) override {
   };
 
+    // Implement the virtual methods to prevent the class from being abstract
+    virtual void visit(CastExpr &Node) override {
+        Node.getInner()->accept(*this);
+    }
+
+    virtual void visit(DeclareDefine &Node) override {
+        llvm::StringRef varName = Node.getName();
+        if (!DefineScope.insert(varName).second) {
+            error(Twice, varName);
+        }
+    }
+
+    virtual void visit(TernaryAssignment &Node) override {
+        Node.getVariable()->accept(*this);
+        Node.getCondition()->accept(*this);
+        Node.getTrueExpr()->accept(*this);
+        Node.getFalseExpr()->accept(*this);
+    }
+
+    virtual void visit(DoWhileStmt &Node) override {
+        Node.getCond()->accept(*this);
+        for (auto *stmt : Node.getBody()) {
+            stmt->accept(*this);
+        }
+    }
+
+    virtual void visit(SwitchStmt &Node) override {
+    Node.getSwitchExpr()->accept(*this);
+    for (auto *caseStmt : Node.getCases()) {
+        caseStmt->accept(*this);
+    }
+    if (Node.getDefaultCase()) {
+        Node.getDefaultCase()->accept(*this);
+    }
+}
+
+
+   virtual void visit(CaseStmt &Node) override {
+    Node.getCaseExpr()->accept(*this);
+    for (auto *stmt : Node.getBody()) {
+        stmt->accept(*this);
+    }
+}
+
+
+   virtual void visit(DefaultStmt &Node) override {
+    for (auto *stmt : Node.getBody()) {
+        stmt->accept(*this);
+    }
+}
+
+
+    virtual void visit(MinStmt &Node) override {
+        Node.getLeft()->accept(*this);
+        Node.getRight()->accept(*this);
+    }
+
+    virtual void visit(MaxStmt &Node) override {
+        Node.getLeft()->accept(*this);
+        Node.getRight()->accept(*this);
+    }
+
+    virtual void visit(MeanStmt &Node) override {
+        Node.getLeft()->accept(*this);
+        Node.getRight()->accept(*this);
+    }
+
+    virtual void visit(SqrtNStmt &Node) override {
+        Node.getBase()->accept(*this);
+        Node.getNthRoot()->accept(*this);
+    }
+
+    virtual void visit(BreakStmt &Node) override {
+    // Implement any necessary logic for break statements
+    // If break statements are not used in your language, you can leave this empty
+    }
+    // Helper Functions
+
+    TypeKind inferType(AST *Node) {
+        if (auto *finalNode = dynamic_cast<Final *>(Node)) {
+            if (finalNode->getKind() == Final::Number)
+                return TypeKind::Int;
+            else if (finalNode->getKind() == Final::FloatNumber)
+                return TypeKind::Float;
+            else if (finalNode->getKind() == Final::Ident) {
+                llvm::StringRef varName = finalNode->getVal();
+                if (IntScope.find(varName) != IntScope.end())
+                    return TypeKind::Int;
+                if (BoolScope.find(varName) != BoolScope.end())
+                    return TypeKind::Bool;
+                if (FloatScope.find(varName) != FloatScope.end())
+                    return TypeKind::Float;
+                auto varIt = VarScope.find(varName.str());
+                if (varIt != VarScope.end())
+                    return varIt->second;
+            }
+        } else if (auto *binaryOp = dynamic_cast<BinaryOp *>(Node)) {
+            TypeKind leftType = inferType(binaryOp->getLeft());
+            TypeKind rightType = inferType(binaryOp->getRight());
+            if (leftType == rightType)
+                return leftType;
+            return TypeKind::Unknown;
+        } else if (auto *castExpr = dynamic_cast<CastExpr *>(Node)) {
+            switch (castExpr->getCastType()) {
+                case CastExpr::IntCast:
+                    return TypeKind::Int;
+                case CastExpr::FloatCast:
+                    return TypeKind::Float;
+                case CastExpr::BoolCast:
+                    return TypeKind::Bool;
+            }
+        }
+        return TypeKind::Unknown;
+    }
+
+    TypeKind getVariableType(llvm::StringRef varName) {
+        if (IntScope.find(varName) != IntScope.end())
+            return TypeKind::Int;
+        if (BoolScope.find(varName) != BoolScope.end())
+            return TypeKind::Bool;
+        if (FloatScope.find(varName) != FloatScope.end())
+            return TypeKind::Float;
+        auto varIt = VarScope.find(varName.str());
+        if (varIt != VarScope.end())
+            return varIt->second;
+        return TypeKind::Unknown;
+    }
 };
 }
 
 bool Sema::semantic(Program *Tree) {
-  if (!Tree)
-    return false; // If the input AST is not valid, return false indicating no errors
-  nms::InputCheck *Check = new nms::InputCheck();;// Create an instance of the InputCheck class for semantic analysis
-  Tree->accept(*Check); // Initiate the semantic analysis by traversing the AST using the accept function
-
-  return Check->hasError(); // Return the result of Check.hasError() indicating if any errors were detected during the analysis
+    if (!Tree)
+        return false;
+    nms::InputCheck Check;
+    Tree->accept(Check);
+    return Check.hasError();
 }
