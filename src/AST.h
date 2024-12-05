@@ -790,13 +790,14 @@ public:
 // MeanStmt class represents a call to the mean function in the AST
 class MeanStmt : public Expr
 {
-    llvm::SmallVector<Expr *> Values;  // Arguments to the mean function
+    Expr *Left;       // First argument
+    Expr *Right;      // Second argument
 
 public:
-    MeanStmt(llvm::SmallVector<Expr *> Values) : Values(Values) {}
+    MeanStmt(Expr *Left, Expr *Right) : Left(Left), Right(Right) {}
 
-    llvm::SmallVector<Expr *>::const_iterator begin() { return Values.begin(); }
-    llvm::SmallVector<Expr *>::const_iterator end() { return Values.end(); }
+    Expr *getLeft() { return Left; }
+    Expr *getRight() { return Right; }
 
     virtual void accept(ASTVisitor &V) override
     {
