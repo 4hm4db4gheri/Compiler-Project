@@ -207,7 +207,7 @@ class DeclarationVar : public Program
     VarVector Vars;
     ValueVector Values;
     TypeVector Types;
-    bool isConst;
+    
 
 public:
     DeclarationVar(VarVector Vars, ValueVector Values, TypeVector Types, bool isConst)
@@ -219,7 +219,7 @@ public:
     ValueVector::const_iterator valEnd() const { return Values.end(); }
     TypeVector::const_iterator typeBegin() const { return Types.begin(); }
     TypeVector::const_iterator typeEnd() const { return Types.end(); }
-
+    bool isConst;
     virtual void accept(ASTVisitor &V) override
     {
         V.visit(*this);
@@ -572,6 +572,8 @@ public:
 
   BodyVector::const_iterator end() { return Body.end(); }
 
+  BodyVector getBody(){return Body;}
+
   virtual void accept(ASTVisitor &V) override
   {
     V.visit(*this);
@@ -624,6 +626,8 @@ public:
   BodyVector::const_iterator begin() { return Body.begin(); }
 
   BodyVector::const_iterator end() { return Body.end(); }
+
+  BodyVector getBody(){return Body;}
 
   virtual void accept(ASTVisitor &V) override
   {
