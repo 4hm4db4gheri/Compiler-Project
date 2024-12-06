@@ -2133,6 +2133,7 @@ SwitchStmt *Parser::parseSwitch()
         goto _error;
     }
 
+    advance();
     return new SwitchStmt(SwitchExpr, Cases, DefaultCase);
 
 _error:
