@@ -34,11 +34,13 @@ class CaseStmt;
 class DefaultStmt;
 class PrintStmt;
 class CastExpr;
+class BoolCastExpr;
 class MinStmt;
 class MaxStmt;
 class MeanStmt;
 class SqrtNStmt;
 class BreakStmt;
+class ContinueStmt;
 
 // ASTVisitor class defines a visitor pattern to traverse the AST
 class ASTVisitor {
@@ -74,11 +76,13 @@ public:
     virtual void visit(DefaultStmt &) = 0;
     virtual void visit(PrintStmt &) = 0;
     virtual void visit(CastExpr &) = 0;
+    virtual void visit(BoolCastExpr &) = 0;
     virtual void visit(MinStmt &) = 0;
     virtual void visit(MaxStmt &) = 0;
     virtual void visit(MeanStmt &) = 0;
     virtual void visit(SqrtNStmt &) = 0;
     virtual void visit(BreakStmt &) = 0;
+    virtual void visit(ContinueStmt &) = 0;
 };
 
 class AST
@@ -244,7 +248,7 @@ public:
     }
 };
 
-class TernaryAssignment : public Program
+class TernaryAssignment : public Expr
 {
 private:
     Final *Variable;        // Variable being assigned
@@ -677,6 +681,32 @@ public:
     }
 };
 
+class BoolCastExpr : public Logic
+{
+public:
+    enum CastType
+    {
+        IntCast,
+        BoolCast,
+        FloatCast
+    };
+
+private:
+    CastType Type;
+    AST *Inner;
+
+public:
+    BoolCastExpr(CastType Type, AST *Inner) : Type(Type), Inner(Inner) {}
+
+    CastType getCastType() { return Type; }
+    AST *getInner() { return Inner; }
+
+    virtual void accept(ASTVisitor &V) override
+    {
+        V.visit(*this);
+    }
+};
+
 class SwitchStmt : public AST {
     Expr *SwitchExpr;
     llvm::SmallVector<CaseStmt *> Cases;
@@ -806,5 +836,16 @@ public:
     V.visit(*this);
   }
 };
+class ContinueStmt : public Program
+{
+private:
+  
+public:
+  ContinueStmt(){}
 
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
+};
 #endif

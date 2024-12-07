@@ -1,13 +1,11 @@
 int a,s,d,f,g;
 switch (d){
     case 1:
-        a += 2;
         b = b * b * b;
-        beark;
+        break;
     case 2:
-        a = 12;
         print(a);
-        beark;
+        break;
     default:
         print(b);
         break;

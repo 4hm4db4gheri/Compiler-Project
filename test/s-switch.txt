@@ -1,21 +1,26 @@
-int x = 1;
-switch (x) {
+int x, z;
+switch(z){
     case 1:
-        print(x);
+        x = 3;
         break;
     case 2:
-        print(x);
+        x = 2;
         break;
     default:
-        print(x);
+        x += 1;
         break;
 }
 
-switch (x) {
-    case 1:
-        print(x);
-        break;
-    case 2:
-        print(x);
-        break;
+float x = 10.5;
+float y = x * 20.5;
+switch(y){
+	case 200:
+		y = y + 2.3;
+		break;
+	case 300:
+		x = x * 21.2;
+		break;
+	default:
+		x = x * y;
+		break;
 }

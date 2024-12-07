@@ -13,7 +13,7 @@ class Token
 public:
     enum TokenKind : unsigned short
     {
-        eoi,            // end of input
+        eoi,            // 0 end of input
         unknown,        // in case of error at the lexical level
         ident,          // identifier
         number,         // integer literal
@@ -23,7 +23,7 @@ public:
         star_assign,    // *=
         slash_assign,   // /=
         eq,             // ==
-        neq,            // !=
+        neq,            // 10 !=
         gt,             // >
         lt,             // <
         gte,            // >=
@@ -35,7 +35,7 @@ public:
         comma,          // ,
         semicolon,      // ;
         plus,           // +
-        minus,          // -
+        minus,          // 20 -
         star,           // *
         slash,          // /
         mod,            // %
@@ -45,8 +45,8 @@ public:
         r_paren,        // )
         l_brace,        // {
         r_brace,        // }
-        KW_int,        // int  
-        KW_bool,       // bool
+        KW_int,         // 30 int  
+        KW_bool,        // bool
         KW_true,        // true
         KW_false,       // false
         KW_if,          // if
@@ -55,7 +55,7 @@ public:
         KW_for,         // for
         KW_and,         // and
         KW_or,          // or
-        KW_print,        // print
+        KW_print,       // 40 print
         
         // new:
         mod_assign,             // %=   
@@ -67,7 +67,7 @@ public:
         KW_const,               //const               
         KW_define,               // #define  
         KW_float,                // float              
-        KW_var,                 // var                  
+        KW_var,                 // 50 var                  
         KW_min,                 //min
         KW_max,                  //max
         KW_mean,                  //mean
@@ -75,9 +75,9 @@ public:
         KW_switch,                  //switch
         KW_case,                    //case
         KW_default,                 //default
-        KW_break,                   //break
-        KW_continue,                 //continue
-        KW_do,          //do 
+        KW_break,                   // break
+        KW_continue,                // 59 continue
+        KW_do,          // 60 do 
         KW_in,          //in
         KW_not,          //not
         floatNumber,

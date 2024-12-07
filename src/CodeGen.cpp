@@ -951,6 +951,44 @@ ns{
     }
 }
 
+    virtual void visit(BoolCastExpr &Node) override {
+    Node.getInner()->accept(*this);
+    Value *InnerValue = V;
+    Type *TargetType = nullptr;
+
+    switch (Node.getCastType()) {
+    case BoolCastExpr::IntCast:
+        TargetType = Int32Ty;
+        break;
+    case BoolCastExpr::BoolCast:
+        TargetType = Int1Ty;
+        break;
+    case BoolCastExpr::FloatCast:
+        TargetType = FloatTy;
+        break;
+    default:
+        llvm::errs() << "Unknown cast type\n";
+        V = nullptr;
+        return;
+    }
+
+    Type *InnerType = InnerValue->getType();
+    if (InnerType == TargetType) {
+        V = InnerValue;
+    } else if (InnerType->isIntegerTy() && TargetType->isFloatingPointTy()) {
+        V = Builder.CreateSIToFP(InnerValue, TargetType);
+    } else if (InnerType->isFloatingPointTy() && TargetType->isIntegerTy()) {
+        V = Builder.CreateFPToSI(InnerValue, TargetType);
+    } else if (InnerType->isIntegerTy(1) && TargetType->isIntegerTy(32)) {
+        V = Builder.CreateZExt(InnerValue, TargetType);
+    } else if (InnerType->isIntegerTy(32) && TargetType->isIntegerTy(1)) {
+        V = Builder.CreateICmpNE(InnerValue, ConstantInt::get(Int32Ty, 0));
+    } else {
+        llvm::errs() << "Unsupported cast from " << *InnerType << " to " << *TargetType << "\n";
+        V = nullptr;
+    }
+}
+
     virtual void visit(DefaultStmt &Node) override {
     // Generate code for the default case body
     for (auto *Stmt : Node.getBody()) {
@@ -967,6 +1005,17 @@ ns{
     // Optionally, insert an unreachable block
     BasicBlock *UnreachableBB = BasicBlock::Create(M->getContext(), "unreachable", Builder.GetInsertBlock()->getParent());
     Builder.SetInsertPoint(UnreachableBB);
+}
+  
+    virtual void visit(ContinueStmt &Node) override {
+    if (BreakTargets.empty()) {
+        llvm::errs() << "Break statement not within a loop or switch\n";
+        return;
+    }
+    Builder.CreateBr(BreakTargets.back());
+    // Optionally, insert an unreachable block
+    // BasicBlock *UnreachableBB = BasicBlock::Create(M->getContext(), "unreachable", Builder.GetInsertBlock());
+    Builder.SetInsertPoint(Builder.GetInsertBlock());
 }
 
     virtual void visit(DeclarationVar &Node) override {

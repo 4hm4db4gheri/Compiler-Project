@@ -70,6 +70,7 @@ Program *Parser::parseProgram()
                 goto _error;
             break;
         }
+        
         case Token::ident:
         {
             Token prev_token = Tok;
@@ -160,6 +161,7 @@ Program *Parser::parseProgram()
 
             break;
         }
+        
         case Token::KW_if:
         {
             IfStmt *i;
@@ -215,6 +217,7 @@ Program *Parser::parseProgram()
                 goto _error;
             break;
         }
+        
         case Token::KW_min:
         {
             MinStmt *m;
@@ -255,6 +258,7 @@ Program *Parser::parseProgram()
                 goto _error;
             break;
         }
+        
         case Token::KW_print:
         {
             PrintStmt *p;
@@ -335,7 +339,27 @@ DeclarationInt *Parser::parseIntDec(bool isConst)
     {
         advance();
 
+        // TernaryAssignment *t_assign = parseTernaryAssign();
+        // if (t_assign)
+        // {
+        //     Values.push_back(t_assign);
+        //     advance();
+        // }
         // Parse the first expression
+
+
+        // Token prev_token = Tok;
+        // const char *prev_buffer = Lex.getBuffer();
+        // TernaryAssignment *t_assign = parseTernaryAssign();
+        // if (t_assign)
+        // {
+        //     Values.push_back(t_assign);
+        // }
+        // else
+        // {
+        //     // If parsing failed or no semicolon, reset lexer state
+        //     Tok = prev_token;
+        //     Lex.setBufferPtr(prev_buffer);
         E = parseExpr();
         if (E)
         {
@@ -345,10 +369,26 @@ DeclarationInt *Parser::parseIntDec(bool isConst)
         {
             goto _error;
         }
+        // }
+
+
+        
 
         // Parse additional expressions separated by commas
         while (Tok.is(Token::comma))
         {
+            // Token prev_token = Tok;
+            // const char *prev_buffer = Lex.getBuffer();
+            // TernaryAssignment *t_assign = parseTernaryAssign();
+            // if (t_assign)
+            // {
+            //     Values.push_back(t_assign);
+            // }
+            // else
+            // {
+            //     // If parsing failed or no semicolon, reset lexer state
+            //     Tok = prev_token;
+            //     Lex.setBufferPtr(prev_buffer);
             advance();
             E = parseExpr();
             if (E)
@@ -359,6 +399,7 @@ DeclarationInt *Parser::parseIntDec(bool isConst)
             {
                 goto _error;
             }
+            // }
         }
     }
 
@@ -1094,6 +1135,7 @@ TernaryAssignment *Parser::parseTernaryAssign()
     }
 
 _error:
+    llvm::errs() << "test\n";
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
@@ -1242,7 +1284,7 @@ _error:
     return nullptr;
 }
 
-Expr *Parser::parseFinal()
+Expr *Parser::parseFinal()  
 {
     Expr *Res = nullptr;
     switch (Tok.getKind())
@@ -1324,11 +1366,16 @@ Expr *Parser::parseFinal()
     case Token::KW_bool:
     {
         // Handle casting
+        // llvm::errs() << "try casting\n";
         Token::TokenKind CastTypeToken = Tok.getKind();
         advance();
-        if (expect(Token::l_paren))
+        if (expect(Token::l_paren)){
+            // llvm::errs() << "no l_paren\n";
+            // llvm::errs() << "token: " << Tok.getKind() <<"\n";
             goto _error;
+        }
         advance();
+        // llvm::errs() << "parse\n";
         AST *Inner = nullptr;
         if (CastTypeToken == Token::KW_int || CastTypeToken == Token::KW_float)
         {
@@ -1340,13 +1387,20 @@ Expr *Parser::parseFinal()
         }
         else
         {
+            // llvm::errs() << "wrong type\n";
             goto _error;
         }
-        if (!Inner)
+        // llvm::errs() << "parse_done\n";
+        if (!Inner){
+            // llvm::errs() << "inner not null\n"; 
             goto _error;
-        if (expect(Token::r_paren))
+        }
+        if (expect(Token::r_paren)){
+            // llvm::errs() << "no r_paren\n";
             goto _error;
+        }
         advance();
+        // llvm::errs() << "final\n";
         CastExpr::CastType CastType;
         if (CastTypeToken == Token::KW_int)
             CastType = CastExpr::IntCast;
@@ -1354,21 +1408,68 @@ Expr *Parser::parseFinal()
             CastType = CastExpr::FloatCast;
         else if (CastTypeToken == Token::KW_bool)
             CastType = CastExpr::BoolCast;
+        else{
+            // llvm::errs() << "wrong type 2\n";
+            goto _error;
+        }
+        Res = new CastExpr(CastType, Inner);
+        // llvm::errs() << "done casting\n";   
+        break;
+    }        
+    case Token::KW_min:
+    {
+        MinStmt *m;
+        m = parseMin();
+        if (m)
+            Res = m;
         else
             goto _error;
-        Res = new CastExpr(CastType, Inner);
         break;
     }
+    case Token::KW_max:
+    {
+        MaxStmt *m;
+        m = parseMax();
+        if (m)
+            Res = m;
+        else
+            goto _error;
+        break;
+    }
+    case Token::KW_mean:
+    {
+        MeanStmt *mean;
+        mean = parseMean();
+        if (mean)
+            Res = mean;
+        else
+            goto _error;
+        break;
+    }
+    case Token::KW_sqrtN:
+    {
+        SqrtNStmt *sqrtN;
+        sqrtN = parseSqrtN();
+        if (sqrtN)
+            Res = sqrtN;
+        else
+            goto _error;
+        break;
+    }
+
+
     
     default:
     {
- 
+        llvm::errs() << Tok.getKind() << "\n"; 
+        llvm::errs() << "default?\n"; 
         goto _error;
     }
     }
     return Res;
 
 _error:
+    llvm::errs() << "error while casting\n";       
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
@@ -1408,7 +1509,6 @@ Logic *Parser::parseComparison()
             advance();
             return Res;
         }
-
         else if (Tok.is(Token::number) && (Tok.getText() == "0" || Tok.getText() == "1"))
         {
             if (Tok.getText() == "1")
@@ -1422,10 +1522,58 @@ Logic *Parser::parseComparison()
             advance();
             return Res;
         }
-
         else if (Tok.is(Token::ident))
         {
             Ident = new Final(Final::Ident, Tok.getText());
+        }
+        else if (Tok.is(Token::KW_bool))
+        {
+            // Handle casting
+            // llvm::errs() << "try casting\n";
+            Token::TokenKind CastTypeToken = Tok.getKind();
+            advance();
+            if (expect(Token::l_paren)){
+                // llvm::errs() << "no l_paren\n";
+                // llvm::errs() << "token: " << Tok.getKind() <<"\n";
+                goto _error;
+            }
+            advance();
+            // llvm::errs() << "parse\n";
+            AST *Inner = nullptr;
+            if (CastTypeToken == Token::KW_int || CastTypeToken == Token::KW_float)
+            {
+                Inner = parseExpr();
+            }
+            else if (CastTypeToken == Token::KW_bool)
+            {
+                Inner = parseLogic();
+            }
+            else
+            {
+                // llvm::errs() << "wrong type\n";
+                goto _error;
+            }
+            // llvm::errs() << "parse_done\n";
+            if (!Inner){
+                // llvm::errs() << "inner not null\n"; 
+                goto _error;
+            }
+            if (expect(Token::r_paren)){
+                // llvm::errs() << "no r_paren\n";
+                goto _error;
+            }
+            advance();
+            // llvm::errs() << "final\n";
+            BoolCastExpr::CastType CastType;
+            if (CastTypeToken == Token::KW_bool)
+                CastType = BoolCastExpr::BoolCast;
+            else{
+                // llvm::errs() << "wrong type 2\n";
+                goto _error;
+            }
+            Res = new BoolCastExpr(CastType, Inner);
+            // llvm::errs() << "done casting\n";   
+            return Res;
         }
         prev_Tok = Tok;
         prev_buffer = Lex.getBuffer();
@@ -1783,29 +1931,29 @@ PrintStmt *Parser::parsePrint()
     //     goto _error;
     // }
     // Var = Tok.getText();
+    Value = parseExpr();
+    // if (!expect(Token::number))
+    // {
+    //     Value = new Final(Final::Number, Tok.getText());
+    // }
+    // else if ((!expect(Token::floatNumber)))
+    // {
+    //     Value = new Final(Final::FloatNumber, Tok.getText());
+    // }
+    // else if ((!expect(Token::KW_true)) || (!expect(Token::KW_false)))
+    // {
+    //     Value = new Final(Final::Bool, Tok.getText());
+    // }
+    // else if ((!expect(Token::ident)))
+    // {
+    //     Value = new Final(Final::Ident, Tok.getText());
+    // }
+    // else
+    // {
+    //     goto _error;
+    // }
 
-    if (!expect(Token::number))
-    {
-        Value = new Final(Final::Number, Tok.getText());
-    }
-    else if ((!expect(Token::floatNumber)))
-    {
-        Value = new Final(Final::FloatNumber, Tok.getText());
-    }
-    else if ((!expect(Token::KW_true)) || (!expect(Token::KW_false)))
-    {
-        Value = new Final(Final::Bool, Tok.getText());
-    }
-    else if ((!expect(Token::ident)))
-    {
-        Value = new Final(Final::Ident, Tok.getText());
-    }
-    else
-    {
-        goto _error;
-    }
-
-    advance();
+    // advance();
     if (expect(Token::r_paren))
     {
         goto _error;
@@ -1959,15 +2107,17 @@ ForStmt *Parser::parseFor()
     }
 
     advance();
-
+    // llvm::errs() << "for pre body done\n";
     Body = getBody();
 
     if (Body.empty())
         goto _error;
 
+    // llvm::errs() << "for body done\n";
     return new ForStmt(First, Second, ThirdAssign, ThirdUnary, Body);
 
 _error:
+    llvm::errs() << "ERROR IN FOR\n";
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
@@ -1991,9 +2141,11 @@ DoWhileStmt *Parser::parseDoWhile()
     }
     advance();
 
+    // llvm::errs() << "prebody\n";
     Body = getBody();
     if (Body.empty())
         goto _error;
+    // llvm::errs() << "body done\n";
 
     advance(); // Consume '}'
 
@@ -2009,21 +2161,27 @@ DoWhileStmt *Parser::parseDoWhile()
     }
     advance();
 
+    // llvm::errs() << "pre logic\n";
     Cond = parseLogic();
     if (Cond == nullptr)
     {
         goto _error;
     }
 
+    // llvm::errs() << "logic done\n";
+    
     if (expect(Token::r_paren))
     {
+        // llvm::errs() << Tok.getKind() << "\n";
         goto _error;
     }
     advance();
-
+    // llvm::errs() << "dowhile done\n";
     return new DoWhileStmt(Cond, Body);
 
 _error:
+    llvm::errs() << "error in dowhile";
+    llvm::errs() << "\n";
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
@@ -2122,7 +2280,9 @@ SwitchStmt *Parser::parseSwitch()
         }
         else
         {
-            llvm::errs() << "error in out of if ";
+
+            llvm::errs() << Tok.getKind() << "\n";
+            llvm::errs() << "error bad key word\n";
             goto _error;
         }
     }
@@ -2590,6 +2750,7 @@ llvm::SmallVector<AST *> Parser::getBody()
     llvm::SmallVector<AST *> body;
     while (!Tok.is(Token::r_brace))
     {
+        // llvm::errs() << Tok.getKind() << "\n";
         switch (Tok.getKind())
         {
 
@@ -2719,7 +2880,6 @@ llvm::SmallVector<AST *> Parser::getBody()
             }
             break;
         }
-
         case Token::KW_do:
         {
             DoWhileStmt *d;
@@ -2803,6 +2963,18 @@ llvm::SmallVector<AST *> Parser::getBody()
             body.push_back(breaks);
             break;
         }
+        case Token::KW_continue:
+        {
+            advance();
+            if (expect(Token::semicolon))
+            {
+                goto _error;
+            }
+            ContinueStmt *continues;
+            body.push_back(continues);
+            break;
+        }
+        
         default:
         {
            
@@ -2819,6 +2991,7 @@ llvm::SmallVector<AST *> Parser::getBody()
     }
 
 _error:
+    llvm::errs() << "getbody error\n";
     while (Tok.getKind() != Token::eoi)
         advance();
     return body;

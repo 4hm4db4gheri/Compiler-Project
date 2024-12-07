@@ -204,11 +204,11 @@ public:
     virtual void visit(PrintStmt &Node) override {
         Expr *value = Node.getVar();
         Final *finalValue = dynamic_cast<Final *>(value);
-        if (!finalValue || finalValue->getKind() != Final::Ident) {
-            llvm::errs() << "Print statement expects an identifier.\n";
-            HasError = true;
-            return;
-        }
+        // if (!finalValue || finalValue->getKind() != Final::Ident) {
+        //     llvm::errs() << "Print statement expects an identifier.\n";
+        //     HasError = true;
+        //     return;
+        // }
 
         llvm::StringRef varName = finalValue->getVal();
 
@@ -331,6 +331,10 @@ public:
     virtual void visit(CastExpr &Node) override {
         Node.getInner()->accept(*this);
     }
+    // Implement the virtual methods to prevent the class from being abstract
+    virtual void visit(BoolCastExpr &Node) override {
+        Node.getInner()->accept(*this);
+    }
 
     virtual void visit(DeclareDefine &Node) override {
         llvm::StringRef varName = Node.getName();
@@ -402,6 +406,8 @@ public:
     virtual void visit(BreakStmt &Node) override {
     // Implement any necessary logic for break statements
     // If break statements are not used in your language, you can leave this empty
+    }
+    virtual void visit(ContinueStmt &Node) override {
     }
     // Helper Functions
 

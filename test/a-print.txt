@@ -1,2 +1,2 @@
 int a;
-print (a + 2);
+print (a);

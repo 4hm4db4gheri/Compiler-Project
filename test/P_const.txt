@@ -1,0 +1,4 @@
+const int x = 12;
+const float y = 10.5;
+const bool z = false;
+const var m = 12;
