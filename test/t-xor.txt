@@ -1,4 +1,0 @@
-int a = 10;
-int b = 11;
-bool c = a xor b;
-print(c);
