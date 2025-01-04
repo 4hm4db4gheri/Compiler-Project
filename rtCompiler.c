@@ -1,12 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void mas_write(int v)
+void print_int(int v)
 {
-    printf("The result is: %d\n", v);
+    printf("%d\n", v);
 }
 
-int mas_read(char *s)
+void print_bool(int v)
+{
+    printf("%s\n", v ? "true" : "false");
+}
+
+int compiler_read(char *s)
 {
     char buf[64];
     int val;

@@ -1,81 +1,14 @@
-# LLVM Compiler Project 2023
+You can find the details in this [document](https://docs.google.com/document/d/14S2qoImBrv2BumIKwbEJSnKZ7ZLcFPj7b25a0BNU_Cs/edit?usp=sharing).
 
-![c++](https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white)
-![cmake](https://img.shields.io/badge/CMake-064F8C?style=for-the-badge&logo=cmake&logoColor=white)
-![bash](https://img.shields.io/badge/Shell_Script-121011?style=for-the-badge&logo=gnu-bash&logoColor=white)
-
-Hi! This is MAS-Lang! A useless but tricky language and we have designed a compiler for it!
-
-This language supports:
-
-## Defining integer variables    
-```
-// Examples:
-
-int a, b, c = 0, 1, 2;
-int a, b, c = 0, 1;
-int a, b;
-```
-
-## Assigning integer variables    
-```
-// Examples:
-
-a = 0;
-a += 1;
-a -= 2;
-a *= 3;
-b /= 4;
-c %= 5;
-```
-
-## If, Elif and Else   
-```
-// Examples:
-
-if a > 3 and b == 10 or false: begin a = 5; end
-elif a==3 and true: begin
-c *= 10;
-end
-else: begin
-c += 1; end
-
-if true and 2>1: begin
-   if a > 3 and b >= 10 or false: begin a = 5; end
-   else: begin c *= 1; end
-end
-
-```
-
-## Loop   
-```
-// Examples:
-
-loopc a > 3 and b <= 10 or false: begin a = 5;
-  a = 5;
-  b = (a * 4) + 5 * (7 - 2) / 1;
-  if (a > 10) and b == 20:
-    begin
-      b *= 10;
-    end
-end
-```
-
-## How to use?
-**1-** Install llvm compiler on your computer (for step by step installation: **https://vrgl.ir/t9N3n** )
-
-**2-** Run the makeBuild.sh by ``` ./makebuild.sh ``` or the below commands:
-```
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
-$ cd code
-$ ./MAS-Lang "int a;"
-```
-
-The results would be the IR code like this:
-
-![Screenshot](screenshot.png)
-
-In case of any issue or problem, let us know in the Issues section!
+The question file of project is [here](https://github.com/RozhanMk/Compiler-Project/blob/master/Compiler-Project-Phase1.pdf).
+# How to run?
+1. Install LLVM using this [blog](https://virgool.io/@MohammadM404/%D8%A2%D9%85%D9%88%D8%B2%D8%B4-%D9%86%D8%B5%D8%A8-%DA%A9%D8%A7%D9%85%D9%BE%D8%A7%DB%8C%D9%84%D8%B1-llvm-%D8%A8%D8%A7-%D8%A7%D8%B3%D8%AA%D9%81%D8%A7%D8%AF%D9%87-%D8%A7%D8%B2-%D9%86%D8%B3%D8%AE%D9%87-%D8%A7%D8%B2-%D9%BE%DB%8C%D8%B4-%DA%A9%D8%A7%D9%85%D9%BE%D8%A7%DB%8C%D9%84-%D8%B4%D8%AF%D9%87-sh5sfv7ijelt).
+2. Clone the project.
+3. Write your input in input.txt.
+4. Run this:
+   ```
+   sudo chmod +x build.sh
+   ./build.sh
+   sudo chmod +x run.sh
+   ./run.sh
+   ```

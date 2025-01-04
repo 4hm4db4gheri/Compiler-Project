@@ -1,6 +1,6 @@
-﻿cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.8)
 
-project ("MAS-Lang")
+project ("Compiler")
 
 include(CheckIncludeFile)
 include(CheckIncludeFileCXX)
@@ -26,4 +26,4 @@ if(LLVM_COMPILER_IS_GCC_COMPATIBLE)
   endif()
 endif()
 
-add_subdirectory ("code")
+add_subdirectory ("src")
