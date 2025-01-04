@@ -7,12 +7,22 @@
 #include "CodeGen.h"
 #include "Parser.h"
 #include "Sema.h"
+#include "precheck.h"
+#include "remove_code.h"
+
+using namespace std;
 
 // Define a command-line option for specifying the input expression.
 static llvm::cl::opt<std::string>
     Input(llvm::cl::Positional,
           llvm::cl::desc("<input expression>"),
           llvm::cl::init(""));
+
+static llvm::cl::opt<std::string> FileName("f",
+	llvm::cl::desc("<Specify the file name>"),
+	llvm::cl::value_desc("filename"),
+	llvm::cl::init(""));
+
 
 // The main function of the program.
 int main(int argc, const char **argv)
@@ -23,8 +33,46 @@ int main(int argc, const char **argv)
     // Parse command-line options.
     llvm::cl::ParseCommandLineOptions(argc, argv, "Simple Compiler\n");
 
+
+
+	string contentString;
+	llvm::StringRef contentRef;
+
+	if (!FileName.empty()) // if filename is specified
+	{
+		std::string fileName = FileName;
+
+		// Use llvm::MemoryBuffer::getFile with the fileName
+		llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> fileOrErr =
+			llvm::MemoryBuffer::getFile(fileName);
+
+		if (auto error = fileOrErr.getError()) {
+			llvm::errs() << "Error opening file: " << error.message() << "\n";
+			return 1;
+		}
+		// Use the file content from the MemoryBuffer
+		contentString = (*fileOrErr)->getBuffer().str();
+	}
+	else // if input is given directly
+	{
+		contentString = Input;
+
+	}
+
+	contentRef = contentString;
+
+	Token nextToken;
+
+	Check checker(contentRef);
+	Remove remove_code(checker);
+	std::string code = remove_code.pointer_to_string();
+	std::cout << "\nOptimized code: \n" << code << "\n---------------\n" << std::endl;
+	contentRef = code;
+
+
+
     // Create a lexer object and initialize it with the input expression.
-    Lexer Lex(Input);
+    Lexer Lex(contentRef);
 
     // Create a parser object and initialize it with the lexer.
     Parser Parser(Lex);
