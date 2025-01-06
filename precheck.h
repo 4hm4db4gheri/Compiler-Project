@@ -50,65 +50,71 @@ public:
     void find_vars(std::vector<std::string>& variables,
                    std::vector<char*>& variable_end_ptr){
 
-    const char* pointer = BufferPtr;
+        const char* pointer = BufferPtr;
 
-    while (*pointer) {                      // since end of context is 0 -> !0 = true -> end of context
-        
-        while (*pointer && charinfo::isWhitespace(*pointer)) {      // Skips whitespace like " "
+        while (*pointer) {                      // since end of context is 0 -> !0 = true -> end of context
+            
+            while (*pointer && charinfo::isWhitespace(*pointer)) {      // Skips whitespace like " "
+                ++pointer;
+            }
+
+            if (charinfo::isLetter(*pointer)) {   // looking for keywords or identifiers like "int", a123 , ...
+
+                const char* end = pointer + 1;
+
+                while (charinfo::isLetter(*end) || charinfo::isDigit(*end))
+                    ++end;                          // until reaches the end of lexeme
+                // example: ".int " -> "i.nt " -> "in.t " -> "int. "
+
+                llvm::StringRef Context(pointer, end - pointer);  // start of lexeme, length of lexeme
+
+                if (Context == "int") {}
+
+                else if (Context == "bool") {}
+
+                else if (Context == "true") {}
+
+                else if (Context == "false") {}
+
+                else if (Context == "output") {
+
+                    bool duplicate = false;
+
+                    for (const auto& element1 : variables) {
+
+                        if(element1 == Context){
+                            duplicate = true;
+                        }
+                    }
+                    if(!duplicate){
+                        variables.push_back("output");
+                        variable_end_ptr.push_back((char*) end);
+                    }
+                    
+                }
+                else {
+                    bool duplicate = false;
+
+                    for (const auto& element1 : variables) {
+
+                        if(element1 == Context){
+                            duplicate = true;
+                        }
+                    }
+                    if(!duplicate){
+                        variables.push_back((std::string) Context);
+                        variable_end_ptr.push_back((char*) end);
+                    }
+                }
+
+                pointer = end;
+
+            }
+
             ++pointer;
         }
 
-        if (charinfo::isLetter(*pointer)) {   // looking for keywords or identifiers like "int", a123 , ...
-
-            const char* end = pointer + 1;
-
-            while (charinfo::isLetter(*end) || charinfo::isDigit(*end))
-                ++end;                          // until reaches the end of lexeme
-            // example: ".int " -> "i.nt " -> "in.t " -> "int. "
-
-            llvm::StringRef Context(pointer, end - pointer);  // start of lexeme, length of lexeme
-
-            if (Context == "int") {}
-
-            else if (Context == "result") {
-
-                bool duplicate = false;
-
-                for (const auto& element1 : variables) {
-
-                    if(element1 == Context){
-                        duplicate = true;
-                    }
-                }
-                if(!duplicate){
-                    variables.push_back("result");
-                    variable_end_ptr.push_back((char*) end);
-                }
-                
-            }
-            else {
-                bool duplicate = false;
-
-                for (const auto& element1 : variables) {
-
-                    if(element1 == Context){
-                        duplicate = true;
-                    }
-                }
-                if(!duplicate){
-                    variables.push_back((std::string) Context);
-                    variable_end_ptr.push_back((char*) end);
-                }
-            }
-
-			pointer = end;
-
-        }
-
-        ++pointer;
-    }
-
-    return;
+        return;
 
 	};
 
@@ -187,7 +193,7 @@ public:
                         ++Buffer;
                     }
 
-                    std::string var = "result";
+                    std::string var = "output";
                     find_right_side_vars(Buffer, live_variables, var);
                     final_lines.push_back(live_lines[i]);
 
@@ -232,7 +238,7 @@ public:
 
                 llvm::StringRef Context(Buffer, end - Buffer);  // start of lexeme, length of lexeme
 
-                if (Context == "result") {
+                if (Context == "output") {
                     return true;
                 }
 
@@ -262,7 +268,7 @@ public:
 
                 llvm::StringRef Context(Buffer, end - Buffer);  // start of lexeme, length of lexeme
 
-                if (Context != "int" && Context != var) {
+                if (Context != "int" && Context != "bool" && Context != "true" && Context != "false" && Context != var) {
 
                     bool duplicate = false;
 

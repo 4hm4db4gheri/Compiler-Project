@@ -9,6 +9,8 @@
 #include "Sema.h"
 #include "precheck.h"
 #include "remove_code.h"
+#include "optimize.h"
+
 
 using namespace std;
 
@@ -63,11 +65,10 @@ int main(int argc, const char **argv)
 
 	Token nextToken;
 
-	Check checker(contentRef);
-	Remove remove_code(checker);
-	std::string code = remove_code.pointer_to_string();
-	std::cout << "\nOptimized code: \n" << code << "\n---------------\n" << std::endl;
-	contentRef = code;
+	Optimize optimizer(contentRef);
+	// std::string code = remove_code.pointer_to_string();
+	// std::cout << "\nOptimized code: \n" << code << "\n---------------\n" << std::endl;
+	// contentRef = code;
 
 
 

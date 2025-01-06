@@ -20,7 +20,7 @@ class Remove{
         checker.find_vars(variables, variable_end_ptr);
         checker.find_lines(variables, line_start);
         checker.set_live(variables, line_start, live_variables, live_lines, last_result_line);
-        live_variables.push_back("result");
+        live_variables.push_back("output");
     }
 
     void remove_lines(){
