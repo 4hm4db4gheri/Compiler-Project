@@ -34,6 +34,21 @@ namespace charinfo
 
 }
 
+std::vector<std::string> split(std::string &s, const std::string &delimiter)
+{
+    std::vector<std::string> tokens;
+    size_t pos = 0;
+    std::string token;
+    while ((pos = s.find(delimiter)) != std::string::npos)
+    {
+        token = s.substr(0, pos);
+        tokens.push_back(token);
+        s.erase(0, pos + delimiter.length());
+    }
+    tokens.push_back(s);
+    return tokens;
+}
+
 class Optimizer
 {
     std::vector<llvm::StringRef> Lines;
@@ -73,22 +88,78 @@ public:
     }
 
 public:
-    void optimize()
+    std::string optimize()
     {
         int i = Lines.size();
         const_pul(i, "output");
         code = "";
         int len = Lines.size();
+
+        std::vector<std::string> initialized_variables;
+
         i = 0;
         while (i < len)
         {
             if (!dead_lines[i])
             {
+                if ((int)new_lines[i][0] == 10)
+                {
+                    new_lines[i] = new_lines[i].substr(1);
+                }
+                std::string temp_str = new_lines[i];
+                std::vector<std::string> temp = split(temp_str, " ");
+
+                int j = 0;
+                while (temp[j] != "int" && temp[j] != "=" && temp[j] != "bool")
+                {
+                    j++;
+                }
+
+                if (temp[j] == "int" || temp[j] == "bool")
+                {
+                    j++;
+                    while (temp[j] == " ")
+                    {
+                        j++;
+                    }
+                    initialized_variables.push_back(temp[j + 1]);
+                }
+                else
+                {
+                    int flag = 0;
+                    for (int k = 0; k < initialized_variables.size(); k++)
+                    {
+                        std::string temp_str = new_lines[i];
+                        std::vector<std::string> temp = split(temp_str, " ");
+                        int j = 0;
+                        while (temp[j] != "=")
+                        {
+                            if (initialized_variables[k] == temp[j]) flag = 1;
+                            j++;
+                        }
+                    }
+                    if (flag == 0)
+                    {
+                        new_lines[i] = "int " + new_lines[i];
+                        std::string temp_str = new_lines[i];
+                        std::vector<std::string> temp = split(temp_str, " ");
+                        j = 0;
+                        while (temp[j] == "int" || temp[j] == " ")
+                        {
+                            j++;
+                        }
+                        initialized_variables.push_back(temp[j]);
+                    }
+                }
                 code.append(new_lines[i]);
+                if (i != new_lines.size() - 1)
+                {
+                    code.append("\n");
+                }
             }
             i++;
         }
-        llvm::errs() << code << "\n";
+        return code;
     }
 
     int const_pul(int j, llvm::StringRef variab)

@@ -65,10 +65,10 @@ int main(int argc, const char **argv)
 
 	Optimizer optimizer(contentRef);
 
-    optimizer.optimize();
+    std::string code = optimizer.optimize();
 	// std::string code = remove_code.pointer_to_string();
-	// std::cout << "\nOptimized code: \n" << code << "\n---------------\n" << std::endl;
-	// contentRef = code;
+	std::cout << "\nOptimized code: \n" << code << "\n---------------\n" << std::endl;
+	contentRef = code;
 
 
 
