@@ -1,5 +1,6 @@
 #include <string>
 #include <iostream>
+using namespace std;
 
 namespace charinfo
 {
@@ -33,7 +34,7 @@ namespace charinfo
 
 }
 
-class Optimize
+class Optimizer
 {
     std::vector<llvm::StringRef> Lines;
     std::vector<bool> dead_lines;
@@ -41,7 +42,7 @@ class Optimize
     const char *BufferPtr;
 
 public:
-    Optimize(const llvm::StringRef &Buffer)
+    Optimizer(const llvm::StringRef &Buffer)
     { // constructor scans the whole context
 
         BufferPtr = Buffer.begin();
@@ -63,17 +64,18 @@ public:
             }
             llvm::StringRef Context(line_start, pointer - line_start);
             Lines.push_back(Context);
-            daed_lines.push_back(true);
+            dead_lines.push_back(true);
             llvm::errs() << "read line: " << Context << "\n";
             line_start = ++pointer;
         }
     }
 
 public:
-    void optimizer()
+    void optimize()
     {
         int i = Lines.size();
-        const_pul(i, "output", )
+        llvm::errs() << "ready for const_pul\n";
+        llvm::errs() << "output has value: " << const_pul(i, "output") << "\n";
     }
 
     int const_pul(int j, llvm::StringRef variab)
@@ -122,13 +124,115 @@ public:
         llvm::StringRef corrent_line = Lines[i];
         const char *pointer = corrent_line.begin();
         const char *start_exp = corrent_line.begin();
-        while (!charinfo::isEqual(*start_exp)){
+        while (!charinfo::isEqual(*start_exp))
+        {
             ++start_exp;
         }
         llvm::StringRef new_line(pointer, start_exp - pointer);
         start_exp++;
+        llvm::errs() << "calculating: " << variab << "\n";
+        return expression(start_exp, i);
 
-        
+    }
 
+
+    char peek(const char *&expr)
+    {
+        return *expr;
+    }
+
+    char get(const char *&expr)
+    {
+        return *expr++;
+    }
+
+    int number(const char *&expr)
+    {
+        int result = get(expr) - '0';
+        while (peek(expr) >= '0' && peek(expr) <= '9')
+        {
+            result = 10 * result + get(expr) - '0';
+        }
+        while (peek(expr) == ' ')
+            get(expr);
+        return result;
+    }
+
+    int variable(const char *&expr, int i)
+    {
+        const char *temp = expr;
+        while (charinfo::isLetter(peek(expr)) || charinfo::isDigit(peek(expr)))
+        {
+            get(expr);
+        }
+        llvm::StringRef name(temp, expr - temp);
+        while (peek(expr) == ' ')
+            get(expr);
+        return const_pul(i, name);
+    }
+
+    int factor(const char *&expr, int i)
+    {
+        while (peek(expr) == ' ')
+            get(expr);
+        if (peek(expr) >= '0' && peek(expr) <= '9')
+            return number(expr);
+        else if (peek(expr) == '(')
+        {
+            get(expr); // '('
+            while (peek(expr) == ' ')
+                get(expr);
+            int result = expression(expr, i);
+            while (peek(expr) == ' ')
+                get(expr);
+            get(expr); // ')'
+            while (peek(expr) == ' ')
+                get(expr);
+            return result;
+        }
+        else if (peek(expr) == '-')
+        {
+            get(expr);
+            return -factor(expr, i);
+        }
+        else if (charinfo::isLetter(peek(expr))){
+            return variable(expr, i);
+        }
+        return 0; // error
+    }
+
+    int term(const char *&expr, int i)
+    {
+        while (peek(expr) == ' ')
+            get(expr);
+        int result = factor(expr, i);
+        while (peek(expr) == ' ')
+            get(expr);
+        while (peek(expr) == '*' || peek(expr) == '/')
+        {
+            if (get(expr) == '*')
+                result *= factor(expr, i);
+
+            else
+                result /= factor(expr, i);
+        }
+        return result;
+    }
+
+    int expression(const char *&expr, int i)
+    {
+        while (peek(expr) == ' ')
+            get(expr);
+        int result = term(expr, i);
+        while (peek(expr) == ' ')
+            get(expr);
+        while (peek(expr) == '+' || peek(expr) == '-')
+        {
+            if (get(expr) == '+')
+                result += term(expr, i);
+            else
+                result -= term(expr, i);
+        }
+        return result;
     }
 };

@@ -7,8 +7,6 @@
 #include "CodeGen.h"
 #include "Parser.h"
 #include "Sema.h"
-#include "precheck.h"
-#include "remove_code.h"
 #include "optimize.h"
 
 
@@ -65,7 +63,9 @@ int main(int argc, const char **argv)
 
 	Token nextToken;
 
-	Optimize optimizer(contentRef);
+	Optimizer optimizer(contentRef);
+
+    optimizer.optimize();
 	// std::string code = remove_code.pointer_to_string();
 	// std::cout << "\nOptimized code: \n" << code << "\n---------------\n" << std::endl;
 	// contentRef = code;
