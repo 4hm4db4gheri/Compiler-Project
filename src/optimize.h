@@ -37,6 +37,7 @@ namespace charinfo
 class Optimizer
 {
     std::vector<llvm::StringRef> Lines;
+    std::vector<std::string> new_lines;
     std::vector<bool> dead_lines;
     std::string code = "";
     const char *BufferPtr;
@@ -66,7 +67,7 @@ public:
             llvm::StringRef Context(line_start, pointer - line_start);
             Lines.push_back(Context);
             dead_lines.push_back(true);
-            llvm::errs() << "read line: " << Context << "\n";
+            new_lines.push_back("");
             line_start = ++pointer;
         }
     }
@@ -75,19 +76,19 @@ public:
     void optimize()
     {
         int i = Lines.size();
-        llvm::errs() << "ready for const_pul\n";
-        llvm::errs() << "output has value: " << const_pul(i, "output") << "\n";
-
+        const_pul(i, "output");
+        code = "";
         int len = Lines.size();
         i = 0;
         while (i < len)
         {
             if (!dead_lines[i])
             {
-                llvm::errs() << Lines[i] << "\n";
+                code.append(new_lines[i]);
             }
             i++;
         }
+        llvm::errs() << code << "\n";
     }
 
     int const_pul(int j, llvm::StringRef variab)
@@ -144,8 +145,7 @@ public:
         llvm::StringRef new_line(pointer, start_exp - pointer);
         start_exp++;
         int value = expression(start_exp, i);
-        llvm::errs() << llvm::StringRef(new_line.str() + " " + std::to_string(value) + ";");
-        Lines[i] = llvm::StringRef(new_line.str() + " " + std::to_string(value) + ";");
+        new_lines[i] = new_line.str() + " " + std::to_string(value) + ";";
         return value;
     }
 
@@ -233,7 +233,7 @@ public:
         return result;
     }
 
-    int expression(const char *&expr, int i)
+    int cond(const char *&expr, int i)
     {
         while (peek(expr) == ' ')
             get(expr);
@@ -246,6 +246,52 @@ public:
                 result += term(expr, i);
             else
                 result -= term(expr, i);
+        }
+        return result;
+    }
+
+    int expression(const char *&expr, int i)
+    {
+        while (peek(expr) == ' ')
+            get(expr);
+        int result = cond(expr, i);
+        while (peek(expr) == ' ')
+            get(expr);
+        while (peek(expr) == '<' || peek(expr) == '>' || peek(expr) == '=' || peek(expr) == '!')
+        {
+            if (peek(expr) == '<')
+            {
+                get(expr);
+                if (peek(expr) == '=')
+                {
+                    get(expr);
+                    result = result <= cond(expr, i);
+                }
+                else
+                    result = result < cond(expr, i);
+            }
+            else if (peek(expr) == '>')
+            {
+                get(expr);
+                if (peek(expr) == '=')
+                {
+                    get(expr);
+                    result = result >= cond(expr, i);
+                }
+                else
+                    result = result > cond(expr, i);
+            }
+            else if (peek(expr) == '=')
+            {
+                get(expr);
+                get(expr);
+                result = result == cond(expr, i);
+            }
+            else if (get(expr) == '!')
+            {
+                get(expr);
+                result = result != cond(expr, i);
+            }
         }
         return result;
     }
