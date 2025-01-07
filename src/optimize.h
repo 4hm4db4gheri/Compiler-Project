@@ -62,6 +62,7 @@ public:
             {
                 ++pointer; //  ¯\_(ツ)_/¯
             }
+            // pointer++;
             llvm::StringRef Context(line_start, pointer - line_start);
             Lines.push_back(Context);
             dead_lines.push_back(true);
@@ -76,13 +77,24 @@ public:
         int i = Lines.size();
         llvm::errs() << "ready for const_pul\n";
         llvm::errs() << "output has value: " << const_pul(i, "output") << "\n";
+
+        int len = Lines.size();
+        i = 0;
+        while (i < len)
+        {
+            if (!dead_lines[i])
+            {
+                llvm::errs() << Lines[i] << "\n";
+            }
+            i++;
+        }
     }
 
     int const_pul(int j, llvm::StringRef variab)
     {
         int i = j;
         bool flag = true;
-        while (i >= 0 && flag)
+        while (i > 0 && flag)
         {
             i--;
             llvm::StringRef corrent_line = Lines[i];
@@ -128,13 +140,14 @@ public:
         {
             ++start_exp;
         }
+        start_exp++;
         llvm::StringRef new_line(pointer, start_exp - pointer);
         start_exp++;
-        llvm::errs() << "calculating: " << variab << "\n";
-        return expression(start_exp, i);
-
+        int value = expression(start_exp, i);
+        llvm::errs() << llvm::StringRef(new_line.str() + " " + std::to_string(value) + ";");
+        Lines[i] = llvm::StringRef(new_line.str() + " " + std::to_string(value) + ";");
+        return value;
     }
-
 
     char peek(const char *&expr)
     {
@@ -195,7 +208,8 @@ public:
             get(expr);
             return -factor(expr, i);
         }
-        else if (charinfo::isLetter(peek(expr))){
+        else if (charinfo::isLetter(peek(expr)))
+        {
             return variable(expr, i);
         }
         return 0; // error
