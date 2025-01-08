@@ -252,6 +252,10 @@ public:
         llvm::StringRef name(temp, expr - temp);
         while (peek(expr) == ' ')
             get(expr);
+        if (name == "true")
+            return 1;
+        else if (name == "false")
+            return 0;
         return const_pul(i, name);
     }
 
