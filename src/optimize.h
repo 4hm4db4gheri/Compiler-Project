@@ -117,12 +117,14 @@ public:
 
                 if (temp[j] == "int" || temp[j] == "bool")
                 {
+                    // llvm::errs()<<temp[j+1]<<"\n";
                     j++;
                     while (temp[j] == " ")
                     {
                         j++;
                     }
-                    initialized_variables.push_back(temp[j + 1]);
+                    initialized_variables.push_back(temp[j]);
+                    // llvm::errs()<<temp[j+1]<<"\n";
                 }
                 else
                 {
