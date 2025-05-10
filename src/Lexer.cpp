@@ -21,64 +21,25 @@ namespace charinfo
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
     }
 
-    LLVM_READNONE inline bool isSpecialCharacter(char c) //new: "[", "]", "?", ":"
+    LLVM_READNONE inline bool isSpecialCharacter(char c)
     {
-        return c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '!' || c == '>' || c == '<' || c == '(' || c == ')' || c == '{' || c == '}'|| c == ',' || c == ';' || c == '%' || c == '^' || c == '[' || c == ']' || c == '?' || c == ':' ;
+        return c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '!' || c == '>' || c == '<' || c == '(' || c == ')' || c == '{' || c == '}'|| c == ',' || c == ';' || c == '%' || c == '^';
     }
-
-    LLVM_READNONE inline bool isUnderScore(char c) //new:
-    {
-        return (c=='_');
-    }
-
-    LLVM_READNONE inline bool isSharp(char c) //new: 
-    {
-        return (c=='#');
-    }
-
 }
 
 void Lexer::next(Token &token) {
-    while (true) {
-        // Skip whitespaces
-        while (*BufferPtr && charinfo::isWhitespace(*BufferPtr)) {
-            ++BufferPtr;
-        }
-        // make sure we didn't reach the end of input
-        if (!*BufferPtr) {
-            token.Kind = Token::eoi;
-            return;
-        }
-        //new: Skip comments
-        if (*BufferPtr == '/') {
-            if (*(BufferPtr + 1) == '/') {
-                //new: Skip single-line comment
-                BufferPtr += 2;
-                while (*BufferPtr && *BufferPtr != '\n') {
-                    ++BufferPtr;
-                }
-                continue; //new: Go back to skip whitespaces and comments
-            } else if (*(BufferPtr + 1) == '*') {
-                //new: Skip multi-line comment
-                BufferPtr += 2;
-                while (*BufferPtr && !(*BufferPtr == '*' && *(BufferPtr + 1) == '/')) {
-                    ++BufferPtr;
-                }
-                if (*BufferPtr) {
-                    //new: Skip "*/"
-                    BufferPtr += 2;
-                }
-                continue; //new: Go back to skip whitespaces and comments
-            }
-        }
-        // Not a comment, break out of the loop
-        break;
+    while (*BufferPtr && charinfo::isWhitespace(*BufferPtr)) {
+        ++BufferPtr;
     }
-
-    // Now proceed to tokenize
+    // make sure we didn't reach the end of input
+    if (!*BufferPtr) {
+        token.Kind = Token::eoi;
+        return;
+    }
+    // collect characters and check for keywords or ident
     if (charinfo::isLetter(*BufferPtr)) {
         const char *end = BufferPtr + 1;
-        while (charinfo::isLetter(*end) || charinfo::isDigit(*end) || charinfo::isUnderScore(*end)) //new: check for underscore
+        while (charinfo::isLetter(*end) || charinfo::isDigit(*end))
             ++end;
         llvm::StringRef Name(BufferPtr, end - BufferPtr);
         Token::TokenKind kind;
@@ -104,95 +65,16 @@ void Lexer::next(Token &token) {
             kind = Token::KW_and;
         else if (Name == "or")
             kind = Token::KW_or;
-
-        //new: 
-        else if(Name == "xor")
-            kind = Token::KW_xor;
-        else if(Name == "const")
-            kind = Token::KW_const;
-        else if(Name == "float")
-            kind = Token::KW_float;
-        else if(Name == "var")
-            kind = Token::KW_var;
-        else if(Name == "min")
-            kind = Token::KW_min;
-        else if(Name == "max")
-            kind = Token::KW_max;
-        else if(Name == "mean")
-            kind = Token::KW_mean;
-        else if(Name == "sqrtN")
-            kind = Token::KW_sqrtN;
-        else if(Name == "switch")
-            kind = Token::KW_switch;
-        else if(Name == "case")
-            kind = Token::KW_case;
-        else if(Name == "default")
-            kind = Token::KW_default;
-        else if(Name == "break")
-            kind = Token::KW_break;
-        else if(Name == "continue")
-            kind = Token::KW_continue;
-        else if(Name == "do")
-            kind = Token::KW_do;
-        else if(Name == "in")
-            kind = Token::KW_in;
-        else if(Name == "not")
-            kind = Token::KW_not;
         else
             kind = Token::ident;
         // generate the token
-        // llvm::errs() << "formed: $" << Name <<"$" << "\n";
         formToken(token, end, kind);
         return;
-    } else if (charinfo::isDigit(*BufferPtr) || (*BufferPtr == '.' && charinfo::isDigit(*(BufferPtr + 1)))) {   //new: identify both int and float
-        const char *start = BufferPtr;
-        const char *end = BufferPtr;
-
-        bool isFloat = false;
-        
-        // If the number starts with digits
-        if (charinfo::isDigit(*end)) {
-            // Consume leading digits
-            while (charinfo::isDigit(*end))
-                ++end;
-            // Check for decimal point
-            if (*end == '.') {
-                ++end;
-                isFloat = true;
-                // Consume digits after decimal point
-                while (charinfo::isDigit(*end))
-                    ++end;
-            }
-        }
-        // If the number starts with a dot
-        else if (*end == '.') {
+    } else if (charinfo::isDigit(*BufferPtr)) { // check for numbers
+        const char *end = BufferPtr + 1;
+        while (charinfo::isDigit(*end))
             ++end;
-            if (charinfo::isDigit(*end)) {
-                isFloat = true;
-                // Consume digits after decimal point
-                while (charinfo::isDigit(*end))
-                    ++end;
-            } else {
-                // '.' not followed by digits, invalid number
-                // llvm::errs() << "formed: unknown"<< "\n";
-                formToken(token, end, Token::unknown);
-                return;
-            }
-        }
-
-        // Decide token kind based on whether it's a float
-        if (isFloat){
-            llvm::StringRef Name(start, end - start);
-            // llvm::errs() << "formed: $" << Name <<"$" << "\n";
-            formToken(token, end, Token::floatNumber);
-        }
-            
-        else{
-            llvm::StringRef Name(start, end - start);
-            // llvm::errs() << "formed: $" << Name <<"$" << "\n";
-            formToken(token, end, Token::number);
-        }
-            
+        formToken(token, end, Token::number);
         return;
     } else if (charinfo::isSpecialCharacter(*BufferPtr)) {
         const char *endWithOneLetter = BufferPtr + 1;
@@ -210,7 +92,7 @@ void Lexer::next(Token &token) {
             kind = Token::assign;
             isFound = true;
             end = endWithOneLetter;
-        }  else if (NameWithTwoLetter == "!="){
+        } else if (NameWithTwoLetter == "!="){
             kind = Token::neq;
             isFound = true;
             end = endWithTwoLetter;
@@ -230,8 +112,16 @@ void Lexer::next(Token &token) {
             kind = Token::star_assign;
             isFound = true;
             end = endWithTwoLetter;
+        } else if (NameWithTwoLetter == "*/"){
+            kind = Token::end_comment;
+            isFound = true;
+            end = endWithTwoLetter;
         } else if (NameWithTwoLetter == "/="){
             kind = Token::slash_assign;
+            isFound = true;
+            end = endWithTwoLetter;
+        } else if (NameWithTwoLetter == "/*"){
+            kind = Token::start_comment;
             isFound = true;
             end = endWithTwoLetter;
         } else if (NameWithTwoLetter == ">="){
@@ -266,6 +156,10 @@ void Lexer::next(Token &token) {
             kind = Token::slash;
             isFound = true;
             end = endWithOneLetter;
+        } else if (NameWithOneLetter == "+"){
+            kind = Token::plus;
+            isFound = true;
+            end = endWithOneLetter;
         } else if (NameWithOneLetter == ">"){
             kind = Token::gt;
             isFound = true;
@@ -298,10 +192,6 @@ void Lexer::next(Token &token) {
             kind = Token::comma;
             isFound = true;
             end = endWithOneLetter;
-        } else if(NameWithTwoLetter == "%="){ //new:
-            kind = Token::mod_assign;
-            isFound = true;
-            end = endWithTwoLetter;
         } else if (NameWithOneLetter == "%"){
             kind = Token::mod;
             isFound = true;
@@ -310,52 +200,13 @@ void Lexer::next(Token &token) {
             kind = Token::exp;
             isFound = true;
             end = endWithOneLetter;
-        } else if(NameWithOneLetter == "["){ //new:
-            kind = Token::l_bracket;
-            isFound = true;
-            end =endWithOneLetter;
-        } else if(NameWithOneLetter == "]"){ //new:
-            kind = Token::r_bracket;
-            isFound = true;
-            end = endWithOneLetter;
-        } else if(NameWithOneLetter == "?"){ //new:
-            kind = Token::questionMark;
-            isFound = true;
-            end =endWithOneLetter;
-        } else if(NameWithOneLetter == ":"){ //new:
-            kind = Token::colonMark;
-            isFound = true;
-            end = endWithOneLetter;
         }
         
         // generate the token
-        if (isFound) {
-            // llvm::errs() << "formed: $" << NameWithOneLetter <<"$" << " or "<< "formed: $" << NameWithTwoLetter <<"$" << "\n";
-            formToken(token, end, kind);
-        }
-        else{ 
-            // llvm::errs() << "formed: unknown"<< "\n";
-            formToken(token, BufferPtr + 1, Token::unknown);
-            }
+        if (isFound) formToken(token, end, kind);
+        else formToken(token, BufferPtr + 1, Token::unknown);
         return;
-    } else if (charinfo::isSharp(*BufferPtr)){  //new: check for #define
-        const char *end = BufferPtr + 1;
-        while (charinfo::isLetter(*end)) 
-            ++end;
-        llvm::StringRef Name(BufferPtr, end - BufferPtr);
-        Token::TokenKind kind;
-        if(Name == "#define"){
-            kind = Token::KW_define;
-            // llvm::errs() << "formed: $" << Name <<"$" << "\n";
-            formToken(token,end,kind);
-            return;
-        } else{
-            // llvm::errs() << "formed: unknown"<< "\n";
-            formToken(token, BufferPtr + 1, Token::unknown);
-            return;
-        }
     } else {
-        llvm::errs() << "formed: unknown"<< "\n";
         formToken(token, BufferPtr + 1, Token::unknown); 
         return;         
     }

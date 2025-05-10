@@ -13,7 +13,7 @@ class Token
 public:
     enum TokenKind : unsigned short
     {
-        eoi,            // 0 end of input
+        eoi,            // end of input
         unknown,        // in case of error at the lexical level
         ident,          // identifier
         number,         // integer literal
@@ -23,19 +23,19 @@ public:
         star_assign,    // *=
         slash_assign,   // /=
         eq,             // ==
-        neq,            // 10 !=
+        neq,            // !=
         gt,             // >
         lt,             // <
         gte,            // >=
         lte,            // <=
         plus_plus,      // ++
         minus_minus,    // --
-        //start_comment,  // /*
-        //end_comment,    // */
+        start_comment,  // /*
+        end_comment,    // */
         comma,          // ,
         semicolon,      // ;
         plus,           // +
-        minus,          // 20 -
+        minus,          // -
         star,           // *
         slash,          // /
         mod,            // %
@@ -45,7 +45,7 @@ public:
         r_paren,        // )
         l_brace,        // {
         r_brace,        // }
-        KW_int,         // 30 int  
+        KW_int,         // int
         KW_bool,        // bool
         KW_true,        // true
         KW_false,       // false
@@ -55,32 +55,7 @@ public:
         KW_for,         // for
         KW_and,         // and
         KW_or,          // or
-        KW_print,       // 40 print
-        
-        // new:
-        mod_assign,             // %=   
-        l_bracket,              // [
-        r_bracket,              // ]   
-        questionMark,           //?        //int a = x>y ? 1 : 2
-        colonMark,              //:        //int a = x>y ? 1 : 2
-        KW_xor,                  //xor        
-        KW_const,               //const               
-        KW_define,               // #define  
-        KW_float,                // float              
-        KW_var,                 // 50 var                  
-        KW_min,                 //min
-        KW_max,                  //max
-        KW_mean,                  //mean
-        KW_sqrtN,                   //sqrtN
-        KW_switch,                  //switch
-        KW_case,                    //case
-        KW_default,                 //default
-        KW_break,                   // break
-        KW_continue,                // 59 continue
-        KW_do,          // 60 do 
-        KW_in,          //in
-        KW_not,          //not
-        floatNumber,
+        KW_print        // print
     };
 
 private:
