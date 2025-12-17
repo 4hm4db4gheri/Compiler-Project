@@ -460,13 +460,15 @@ ns{
       Builder.CreateBr(ForCondBB); //?
 
       Builder.SetInsertPoint(ForCondBB);
-      Value* counterLoad = Builder.CreateLoad(counterAlloca);
+      Value* counterLoad = Builder.CreateLoad(counterAlloca->getAllocatedType(), counterAlloca);
+
 
       Value *cond = Builder.CreateICmpSLT(counterLoad, Right);
       Builder.CreateCondBr(cond, ForBodyBB, AfterForBB);
 
       Builder.SetInsertPoint(ForBodyBB);
-      Value* resultLoad = Builder.CreateLoad(resultAlloca);
+      Value* resultLoad = Builder.CreateLoad(resultAlloca->getAllocatedType(), resultAlloca);
+
 
       Value* resultMul = Builder.CreateMul(resultLoad, Left);
       Value* counterInc = Builder.CreateAdd(counterLoad, Int32One);
@@ -476,7 +478,8 @@ ns{
       Builder.CreateBr(ForCondBB);
       Builder.SetInsertPoint(AfterForBB);
 
-      Value* result = Builder.CreateLoad(resultAlloca);
+      Value* result = Builder.CreateLoad(resultAlloca->getAllocatedType(), resultAlloca);
+
       return result;
     }
 
@@ -1146,7 +1149,8 @@ ns{
     TrueBB = Builder.GetInsertBlock(); // Update after possible new blocks
 
     // Emit false block
-    TheFunction->getBasicBlockList().push_back(FalseBB);
+    FalseBB->insertInto(TheFunction);
+
     Builder.SetInsertPoint(FalseBB);
     Node.getFalseExpr()->accept(*this);
     Value *FalseV = V;
@@ -1154,7 +1158,8 @@ ns{
     FalseBB = Builder.GetInsertBlock();
 
     // Emit merge block
-    TheFunction->getBasicBlockList().push_back(MergeBB);
+    MergeBB->insertInto(TheFunction);
+
     Builder.SetInsertPoint(MergeBB);
     PHINode *PN = Builder.CreatePHI(TrueV->getType(), 2, "ternary.result");
     PN->addIncoming(TrueV, TrueBB);
